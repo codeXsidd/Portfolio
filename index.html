@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siddharth - Portfolio</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="./asset/icon.png" type="image/x-icon">
+</head>
+<body>
+       <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#home">Portfolio</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home" onclick="showSection('home')">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about" onclick="showSection('about')">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#skills" onclick="showSection('skills')">Skills</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#projects" onclick="showSection('projects')">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact" onclick="showSection('contact')">Contact</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Home Section -->
+    <section id="home" class="section active hero-section">
+        <div class="particles" id="particles"></div>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8 text-center">
+                    <div class="profile-img">
+                        <img src="./asset/photo1.png" alt="Profile Picture">
+                    </div>
+                    <h1 class="hero-title">Siddharth S</h1>
+                    <p class="hero-subtitle">
+                        <span id="typing-text" class="typing-animation">Front End Developer</span>
+                    </p>
+                    <div class="social-links">
+                        <a href="https://linkedin.com/in/siddharth2006" target="_blank" rel="noopener noreferrer" title="LinkedIn">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="https://github.com/codeXsidd" target="_blank" rel="noopener noreferrer" title="GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                        <a href="mailto:siddharth291206@gmail.com" title="Email">
+                            <i class="fas fa-envelope"></i>
+                        </a>
+                    </div>
+                    <div class="mt-4">
+                        <a href="#about" class="btn-custom" onclick="showSection('about')">About Me</a>
+                        <a href="#" class="btn-custom" onclick="downloadResume()">
+                            <i class="fas fa-download"></i> Download Resume
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section about-section">
+        <div class="container">
+            <h2 class="section-title">About Me</h2>
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <div class="profile-img mb-4">
+                        <img src="./asset/photo2.png" alt="About Picture">
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h3 class="mb-4">Passionate Full Stack Developer</h3>
+                    <p class="mb-4">
+                        I'm a dedicated full stack developer with over 5 years of experience in creating innovative web solutions. 
+                        My passion lies in building user-friendly applications that solve real-world problems.
+                    </p>
+                    <p class="mb-4">
+                        I specialize in modern web technologies including React, Node.js, Python, and cloud platforms. 
+                        I believe in continuous learning and staying updated with the latest industry trends.
+                    </p>
+                </div>
+               
+
+             <!-- Info Boxes -->
+              <div class="about-info-box">
+                  <h2>MY WORK APPROACH </h2>
+                  <div class="info-boxes">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <h3>Problem-Solving</h3>
+                                    <p> I approach challenges analytically and creatively, aiming for efficient, real-world solutions.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                    <h3>Teamwork & Leadership</h3>
+                                    <p>  I collaborate effectively in teams, take initiative when needed, and support others to drive collective success.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                                   
+                                    <h3>Growth-Oriented Mindset</h3>
+                                    <p> I consistently learn new technologies, seek feedback, and turn obstacles into learning opportunities.</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-box">
+                            
+                                    <h3>Versatile & Adaptable</h3>
+                                    <p> I adapt quickly to new tools, domains, and project changes while delivering consistent performance.</p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+                </div>
+
+             <!-- end of box  -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="section skills-section">
+        <div class="container">
+            <h2 class="section-title">My Skills</h2>
+            <div class="skills-grid">
+                <div class="skill-box skill-html">
+                    <div class="skill-icon">
+                        <i class="fab fa-html5"></i>
+                    </div>
+                    <h3>HTML5</h3>
+                    <p>Semantic markup, accessibility, and modern HTML standards for web development.</p>
+                </div>
+                
+                <div class="skill-box skill-css">
+                    <div class="skill-icon">
+                        <i class="fab fa-css3-alt"></i>
+                    </div>
+                    <h3>CSS3</h3>
+                    <p>Advanced styling, animations, flexbox, grid, and responsive design techniques.</p>
+                </div>
+                
+                <div class="skill-box skill-javascript">
+                    <div class="skill-icon">
+                        <i class="fab fa-js-square"></i>
+                    </div>
+                    <h3>JavaScript</h3>
+                    <p>ES6+, DOM manipulation, async programming, and modern JavaScript frameworks.</p>
+                </div>
+                
+                <div class="skill-box skill-c">
+                    <div class="skill-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>C Programming</h3>
+                    <p>System programming, memory management, and foundational programming concepts.</p>
+                </div>
+                
+                <div class="skill-box skill-python">
+                    <div class="skill-icon">
+                        <i class="fab fa-python"></i>
+                    </div>
+                    <h3>Python</h3>
+                    <p>Web development, data analysis, automation, and machine learning applications.</p>
+                </div>
+                
+                <div class="skill-box skill-java">
+                    <div class="skill-icon">
+                        <i class="fab fa-java"></i>
+                    </div>
+                    <h3>Java</h3>
+                    <p>Object-oriented programming, enterprise applications, and backend development.</p>
+                </div>
+
+
+                <div class="skill-box skill-mysql">
+                    <div class="skill-icon">
+                        <i class="fa-solid fa-database"></i>
+                    </div>
+                    <h3>MySQL</h3>
+                    <p>It is primarily used as a relational database management system (RDBMS) to store, manage, and retrieve data.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+     <section id="projects" class="section projects-section">
+        <div class="container d-flex flex-column align-items-center justify-content-center" style="min-height: 100vh;">
+            <h2 class="section-title">My Projects</h2>
+            <div class="row">
+                <div class="col-lg-4 d-flex align-items-stretch">
+                    <div class="project-card w-100">
+                        <h4><i class="fas fa-tasks"></i> Responsive-ToDo-List</h4>
+                        <p>A responsive and user-friendly To-Do List application designed to help users manage their daily tasks efficiently.</p>
+                         <div class="mt-auto">
+                            <div class="mt-3">
+                                <span class="badge bg-primary me-1">Html</span>
+                                <span class="badge bg-warning me-1">Css</span>
+                                <span class="badge bg-secondary me-1">JavaScript</span>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-light btn-sm me-2" onclick="showDemo('todo')">View Demo</button>
+                                <button class="btn btn-outline-light btn-sm" onclick="openGitHub('todo')">GitHub</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 d-flex align-items-stretch">
+                    <div class="project-card w-100">
+                        <h4><i class="fas fa-edit"></i> Share Quiz</h4>
+                        <p>Share Quiz is a dynamic web application that empowers users to effortlessly create, customize, and share quizzes with a single link. Share Quiz makes quiz creation intuitive and interactive.</p>
+                        <div class="mt-auto">
+                            <div class="mt-3">
+                                <span class="badge bg-primary me-1">Html</span>
+                                <span class="badge bg-success me-1">Css</span>
+                                <span class="badge bg-info me-1">JavaScript</span>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-light btn-sm me-2" onclick="showDemo('quiz')">View Demo</button>
+                                <button class="btn btn-outline-light btn-sm" onclick="openGitHub('quiz')">GitHub</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-lg-4 d-flex align-items-stretch">
+                    <div class="project-card w-100">
+                        <h4><i class="fas fa-pencil"></i> Notes Nests</h4>
+                        <p>A minimal, Markdown-enabled note-taking web app with autosave and local storage support — perfect for nesting your ideas effortlessly.</p>
+                         <div class="mt-auto">
+                            <div class="mt-3">
+                                <span class="badge bg-danger me-1">Html</span>
+                                <span class="badge bg-success me-1">Css</span>
+                                <span class="badge bg-info me-1">JavaScript</span>
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-light btn-sm me-2" onclick="showDemo('notes')">View Demo</button>
+                                <button class="btn btn-outline-light btn-sm" onclick="openGitHub('notes')">GitHub</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal fade" id="demoModal" tabindex="-1" aria-labelledby="demoModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="demoModalTitle">Project Demo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="demoContent">
+                    </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-light" id="visitProjectBtn">
+                        <i class="fas fa-external-link-alt"></i> Visit Project
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contact Section -->
+    <section id="contact" class="section contact-section">
+        <div class="container">
+            <h2 class="section-title">Get In Touch</h2>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <form class="contact-form" action="https://api.web3forms.com/submit" method="POST">
+                        <input type="hidden" name="access_key" value="5615ecf9-5d6b-411e-b767-edd01e00afe6">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="text" name="name" class="form-control" placeholder="Your Name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" name="email" class="form-control" placeholder="Your Email" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <input type="text" name="subject" class="form-control" placeholder="Subject" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <textarea name="message" class="form-control" rows="5" placeholder="Your Message" required></textarea>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button type="submit" class="btn-custom">
+                                <i class="fas fa-paper-plane"></i> Send Message
+                            </button>
+                        </div>
+                    </form>
+                    <div class="row mt-5">
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-map-marker-alt fa-2x mb-3"></i>
+                            <h5>Location</h5>
+                            <p>Chennai, Tamil Nadu<br>India</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-phone fa-2x mb-3"></i>
+                            <h5>Phone</h5>
+                            <p>+91 9790350391</p>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <i class="fas fa-envelope fa-2x mb-3"></i>
+                            <h5>Email</h5>
+                            <p>siddharth291206@gmail.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
