@@ -225,18 +225,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     window.openGitHub = openGitHub;
 
-
-
-   // Form submission success message
-    /*const contactForm = document.querySelector('.contact-form');
-    if (contactForm) {
-        contactForm.addEventListener('submit', function(e) {
-            e.preventDefault(); // Prevent default form submission
+    // Add click tracking for analytics 
+            profileLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    const platform = this.closest('.coding-profile').classList[1];
+                    console.log(`Profile clicked: ${platform}`);
+                    // You can add analytics tracking here
+                });
+            });
             
-            // This would normally be handled by Web3Forms
-            setTimeout(() => {
-                alert('Thank you for your message! I will get back to you soon.');
-            }, 1000);
-        });
-    }*/
+
+   
 });
