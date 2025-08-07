@@ -143,6 +143,117 @@
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             animation: slideInFromLeft 1s ease-out;
         }
+        
+
+
+
+          /* Coding Profiles Styles */
+        .coding-profiles {
+            margin-top: 60px;
+        }
+
+        .coding-profiles h3 {
+            font-size: 2rem;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .coding-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .coding-profile {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 30px 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            animation: slideInUp 0.8s ease-out;
+        }
+
+        .coding-profile:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .coding-profile .profile-icon {
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        .coding-profile:hover .profile-icon {
+            transform: scale(1.1);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .coding-profile h4 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .coding-profile .problems-solved {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            margin-bottom: 15px;
+        }
+
+        .coding-profile .profile-link {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .coding-profile .profile-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            color: white;
+            text-decoration: none;
+            transform: translateY(-2px);
+        }
+
+        /* Platform specific colors */
+        .skillrack .profile-icon { background: linear-gradient(45deg, #ff6b35, #f7931e); color: white; }
+        .hackerrank .profile-icon { background: linear-gradient(45deg, #2ec866, #00d4aa); color: white; }
+        .leetcode .profile-icon { background: linear-gradient(45deg, #ffa116, #f89820); color: white; }
+        .geeksforgeeks .profile-icon { background: linear-gradient(45deg, #0f7b0f, #2d8f2d); color: white; }
+
+        .section-divider {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+            margin: 50px 0 0 0;
+        }
+
+
+
+
+
 
         @keyframes slideInFromLeft {
             0% {
