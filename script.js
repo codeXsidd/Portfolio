@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function downloadResume() {
         try {
             const link = document.createElement('a');
-            link.href = '/asset/siddharth_resume.pdf'; // You would put actual PDF data here
+            link.href = './asset/siddharth_resume.pdf'; // You would put actual PDF data here
             link.download = 'Siddharth_Resume.pdf';
             link.target = '_blank';
             document.body.appendChild(link);
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', function() {
      const projects = {
         todo: {
             title: "Responsive-ToDo-List",
-            description: "A collaborative app with persist their daily tasks with a clean user interface and local storage support.",
+            description: "A collaborative app to persist your daily tasks with a clean user interface and local storage support.",
             demoUrl: " https://responsive-to-do-list.vercel.app", 
             githubUrl: "https://github.com/codeXsidd/responsive-to-do-list",
             features: [
@@ -226,7 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
     window.openGitHub = openGitHub;
 
     // Add click tracking for analytics 
-            profileLinks.forEach(link => {
+    const profileLinks = document.querySelectorAll('.profile-link');
+    profileLinks.forEach(link => {
                 link.addEventListener('click', function() {
                     const platform = this.closest('.coding-profile').classList[1];
                     console.log(`Profile clicked: ${platform}`);
