@@ -1,6 +1,6 @@
 
-document.addEventListener('DOMContentLoaded', function() {
-    
+document.addEventListener('DOMContentLoaded', function () {
+
     // Navigation functionality
     function showSection(sectionId) {
         // Hide all sections
@@ -8,24 +8,24 @@ document.addEventListener('DOMContentLoaded', function() {
         sections.forEach(section => {
             section.classList.remove('active');
         });
-        
+
         // Show selected section
         const targetSection = document.getElementById(sectionId);
         if (targetSection) {
             targetSection.classList.add('active');
         }
-        
+
         // Update navbar active state
         const navLinks = document.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
             link.classList.remove('active');
         });
-        
+
         const activeLink = document.querySelector(`[href="#${sectionId}"]`);
         if (activeLink) {
             activeLink.classList.add('active');
         }
-        
+
         // Animate skill bars when skills section is shown
         if (sectionId === 'skills') {
             setTimeout(() => {
@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         function typeWriter() {
             const currentText = texts[textIndex];
-            
+
             if (isDeleting) {
                 typingText.textContent = currentText.substring(0, charIndex - 1);
                 charIndex--;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 typingText.textContent = currentText.substring(0, charIndex + 1);
                 charIndex++;
             }
-            
+
             if (!isDeleting && charIndex === currentText.length) {
                 setTimeout(() => {
                     isDeleting = true;
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 isDeleting = false;
                 textIndex = (textIndex + 1) % texts.length;
             }
-            
+
             const typingSpeed = isDeleting ? 100 : 150;
             setTimeout(typeWriter, typingSpeed);
         }
@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create floating particles
     function createParticles() {
         const particlesContainer = document.getElementById('particles');
-        
+
         if (particlesContainer) {
             for (let i = 0; i < 50; i++) {
                 const particle = document.createElement('div');
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function downloadResume() {
         try {
             const link = document.createElement('a');
-            link.href = './asset/siddharth_resume.pdf'; // You would put actual PDF data here
+            link.href = '/asset/siddharth_resume.pdf'; // You would put actual PDF data here
             link.download = 'Siddharth_Resume.pdf';
             link.target = '_blank';
             document.body.appendChild(link);
@@ -146,11 +146,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     //project section
-     const projects = {
+    const projects = {
         todo: {
             title: "Responsive-ToDo-List",
-            description: "A collaborative app to persist your daily tasks with a clean user interface and local storage support.",
-            demoUrl: " https://responsive-to-do-list.vercel.app", 
+            description: "A collaborative app with persist their daily tasks with a clean user interface and local storage support.",
+            demoUrl: " https://responsive-to-do-list.vercel.app",
             githubUrl: "https://github.com/codeXsidd/responsive-to-do-list",
             features: [
                 "Add, edit, complete, and delete to-do items easily",
@@ -159,12 +159,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 "Clean and responsive Bootstrap-based UI",
                 "Escape key cancels item editing instantly",
                 "No signup or login — just open and make the Todo List"
-                ]
+            ]
         },
         quiz: {
             title: "Share-Quiz",
             description: "Share Quiz is a dynamic web app that lets users easily create, customize, and share interactive quizzes through a single link.",
-            demoUrl: "https://share-quiz.vercel.app", 
+            demoUrl: "https://share-quiz.vercel.app",
             githubUrl: "https://github.com/codeXsidd/share-quiz",
             features: [
                 "Create custom quizzes with multiple questions and answers",
@@ -176,11 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 "Modern, responsive UI built with HTML, CSS, and JavaScript",
                 "No signup or login — just open and use it"
             ]
-        }, 
+        },
         notes: {
             title: "Notes Nests",
             description: "Effortless note-taking meets elegant design in your browser.",
-            demoUrl: "https://notes-nests.vercel.app", 
+            demoUrl: "https://notes-nests.vercel.app",
             githubUrl: "https://github.com/codeXsidd/notes-nests",
             features: [
                 "Instantly create unlimited sticky notes with one click",
@@ -226,15 +226,14 @@ document.addEventListener('DOMContentLoaded', function() {
     window.openGitHub = openGitHub;
 
     // Add click tracking for analytics 
-    const profileLinks = document.querySelectorAll('.profile-link');
     profileLinks.forEach(link => {
-                link.addEventListener('click', function() {
-                    const platform = this.closest('.coding-profile').classList[1];
-                    console.log(`Profile clicked: ${platform}`);
-                    // You can add analytics tracking here
-                });
-            });
-            
+        link.addEventListener('click', function () {
+            const platform = this.closest('.coding-profile').classList[1];
+            console.log(`Profile clicked: ${platform}`);
+            // You can add analytics tracking here
+        });
+    });
 
-   
+
+
 });
