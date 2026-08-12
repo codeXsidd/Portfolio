@@ -14,18 +14,18 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Nodemailer transporter ──────────────────────────────────────
-const smtpPort = process.env.SMTP_PORT || 465;
+const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: smtpPort,
-    secure: Number(smtpPort) === 465, // true for 465, false for other ports
+    secure: smtpPort === 465, // true for 465, false for 587 (STARTTLS)
     auth: {
         user: process.env.SMTP_USER || process.env.EMAIL_USER,
         pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
     },
-    connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 10000
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000
 });
 
 // ── Middleware ──────────────────────────────────────────────────
@@ -64,12 +64,26 @@ app.post('/api/contact', async (req, res) => {
         return res.status(400).json({ error: 'Name, email, and message are required.' });
     }
 
+    const myEmail = process.env.CONTACT_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
     const mailOptions = {
-        from:    `"Portfolio Contact" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+        from: `"${name} via Portfolio" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
         replyTo: `"${name}" <${email}>`,
-        to:      process.env.CONTACT_EMAIL || process.env.RECEIVER_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER,
-        subject: `Portfolio Contact: ${subject || '(no subject)'}`,
-        text:    `New message from your portfolio.\n\nName:    ${name}\nEmail:   ${email}\nSubject: ${subject || '—'}\n\nMessage:\n${message}`
+        to: myEmail,
+        subject: `[Portfolio] ${subject || 'New message'} — from ${name}`,
+        text: `New contact form message\n\nFrom:    ${name}\nEmail:   ${email}\nSubject: ${subject || '—'}\n\nMessage:\n${message}\n\n---\nReply directly to this email to respond to ${name}.`,
+        html: `
+<div style="font-family:monospace;background:#0B1020;color:#F8FAFC;padding:24px;border-radius:8px;">
+  <h2 style="color:#22D3EE;margin:0 0 16px;">📩 New Portfolio Message</h2>
+  <table style="width:100%;border-collapse:collapse;">
+    <tr><td style="color:#94A3B8;padding:6px 0;width:80px;">From</td><td style="color:#F8FAFC;">${name}</td></tr>
+    <tr><td style="color:#94A3B8;padding:6px 0;">Email</td><td style="color:#22D3EE;"><a href="mailto:${email}" style="color:#22D3EE;">${email}</a></td></tr>
+    <tr><td style="color:#94A3B8;padding:6px 0;">Subject</td><td style="color:#F8FAFC;">${subject || '—'}</td></tr>
+  </table>
+  <hr style="border:none;border-top:1px solid #1E293B;margin:16px 0;">
+  <p style="color:#CBD5E1;white-space:pre-wrap;">${message}</p>
+  <hr style="border:none;border-top:1px solid #1E293B;margin:16px 0;">
+  <p style="color:#64748B;font-size:12px;">Reply directly to this email to respond to ${name} at ${email}.</p>
+</div>`
     };
 
     try {
