@@ -1,6 +1,7 @@
 /**
  * server.js — Portfolio Backend
- * Serves static files and handles the contact form via Nodemailer + Gmail.
+ * Serves static files and handles contact form via Nodemailer + Brevo SMTP.
+ * Brevo supports port 587 AND 2525 (2525 bypasses Render free tier port blocks).
  */
 
 const express    = require('express');
@@ -12,16 +13,18 @@ require('dotenv').config();
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Nodemailer transporter ──────────────────────────────────────
-// Uses Gmail service shorthand which automatically sets host/port/secure.
-// `family: 4` forces IPv4 to avoid ENETUNREACH on Render free tier.
+// ── Nodemailer transporter via Brevo SMTP ───────────────────────
+// Brevo SMTP works on Render free tier (port 587 + 2525 both supported)
+// Sign up free at https://app.brevo.com → SMTP & API → SMTP
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: false, // STARTTLS on port 587
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: process.env.SMTP_USER, // your Brevo login email
+        pass: process.env.SMTP_PASS  // your Brevo SMTP key (NOT your Brevo password)
     },
-    family: 4
+    family: 4 // Force IPv4
 });
 
 // ── Middleware ──────────────────────────────────────────────────
