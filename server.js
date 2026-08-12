@@ -14,10 +14,11 @@ const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Nodemailer transporter ──────────────────────────────────────
+const smtpPort = process.env.SMTP_PORT || 465;
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: process.env.SMTP_PORT || 465,
-    secure: true, // true for 465, false for other ports
+    port: smtpPort,
+    secure: Number(smtpPort) === 465, // true for 465, false for other ports
     auth: {
         user: process.env.SMTP_USER || process.env.EMAIL_USER,
         pass: process.env.SMTP_PASS || process.env.EMAIL_PASS

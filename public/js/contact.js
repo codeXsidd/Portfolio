@@ -111,7 +111,7 @@ function buildContactForm(term) {
         wrap.innerHTML = '';
         const success = document.createElement('div');
         success.className = 'banner success';
-        success.innerHTML = `✓ Message sent successfully.<br><span style="font-size:11px;color:var(--text-2);margin-top:4px;display:block;">Thank you for contacting Siddharth.</span>`;
+        success.innerHTML = `✓ Message sent successfully.<br><span style="font-size:11px;color:var(--t2);margin-top:4px;display:block;">Thank you for contacting Siddharth.</span>`;
         wrap.appendChild(success);
       } else {
         statusMsg.innerHTML = `<span class="c-error">✗ ${data.error || 'Message could not be sent. Please try again.'}</span>`;
