@@ -1,40 +1,25 @@
 /**
  * server.js — Portfolio Backend
- * Serves static files and handles the contact form via Nodemailer.
- * No database. No unused routes.
+ * Serves static files and handles the contact form via Resend API.
+ * Uses HTTP API (port 443) — works on all cloud platforms including Render free tier.
  */
 
 const express  = require('express');
 const cors     = require('cors');
 const path     = require('path');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 require('dotenv').config();
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── Nodemailer transporter ──────────────────────────────────────
-const smtpPort = Number(process.env.SMTP_PORT) || 587;
-const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-    port: smtpPort,
-    secure: false, // Brevo uses STARTTLS on 587
-    family: 4, // Force IPv4 — Render free tier blocks IPv6 outbound
-    auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
-    },
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 15000
-});
+// ── Resend client (HTTP API — never blocked by cloud firewalls) ──
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // ── Middleware ──────────────────────────────────────────────────
 const corsOptions = {
     origin: function (origin, callback) {
         const allowedOrigin = process.env.FRONTEND_URL;
-        // Allow requests with no origin (like mobile apps or curl requests)
-        // or if origin matches FRONTEND_URL. If FRONTEND_URL is not set, allow all for dev.
         if (!origin || !allowedOrigin || origin === allowedOrigin) {
             callback(null, true);
         } else {
@@ -65,15 +50,16 @@ app.post('/api/contact', async (req, res) => {
         return res.status(400).json({ error: 'Name, email, and message are required.' });
     }
 
-    const myEmail = process.env.CONTACT_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER;
-    const mailOptions = {
-        from: `"${name} via Portfolio" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
-        replyTo: `"${name}" <${email}>`,
-        to: myEmail,
-        subject: `[Portfolio] ${subject || 'New message'} — from ${name}`,
-        text: `New contact form message\n\nFrom:    ${name}\nEmail:   ${email}\nSubject: ${subject || '—'}\n\nMessage:\n${message}\n\n---\nReply directly to this email to respond to ${name}.`,
-        html: `
-<div style="font-family:monospace;background:#0B1020;color:#F8FAFC;padding:24px;border-radius:8px;">
+    const toEmail = process.env.CONTACT_EMAIL;
+
+    try {
+        const { error } = await resend.emails.send({
+            from: 'Portfolio Contact <onboarding@resend.dev>',
+            reply_to: `${name} <${email}>`,
+            to: [toEmail],
+            subject: `[Portfolio] ${subject || 'New message'} — from ${name}`,
+            html: `
+<div style="font-family:monospace;background:#0B1020;color:#F8FAFC;padding:24px;border-radius:8px;max-width:600px;margin:0 auto;">
   <h2 style="color:#22D3EE;margin:0 0 16px;">📩 New Portfolio Message</h2>
   <table style="width:100%;border-collapse:collapse;">
     <tr><td style="color:#94A3B8;padding:6px 0;width:80px;">From</td><td style="color:#F8FAFC;">${name}</td></tr>
@@ -83,16 +69,19 @@ app.post('/api/contact', async (req, res) => {
   <hr style="border:none;border-top:1px solid #1E293B;margin:16px 0;">
   <p style="color:#CBD5E1;white-space:pre-wrap;">${message}</p>
   <hr style="border:none;border-top:1px solid #1E293B;margin:16px 0;">
-  <p style="color:#64748B;font-size:12px;">Reply directly to this email to respond to ${name} at ${email}.</p>
+  <p style="color:#64748B;font-size:12px;">Click Reply to respond directly to ${name} at ${email}.</p>
 </div>`
-    };
+        });
 
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log(`[contact] Email received from ${name} <${email}>`);
+        if (error) {
+            console.error('[contact] Resend error:', error);
+            return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+        }
+
+        console.log(`[contact] Email sent from ${name} <${email}>`);
         res.json({ message: 'success' });
     } catch (err) {
-        console.error('[contact] Email error:', err.message);
+        console.error('[contact] Unexpected error:', err.message);
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 });
