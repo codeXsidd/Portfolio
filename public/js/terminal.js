@@ -167,7 +167,9 @@ class Terminal {
         <button class="term-btn" style="border-color: var(--violet-border); color: var(--violet);" onclick="TERM.executeCommand('help')">? HELP</button>
       </div>`;
     this.outputEl.appendChild(wrap);
-    this._scrollToBottom();
+    setTimeout(() => {
+      this.outputEl.scrollTop = 0;
+    }, 50);
   }
 
   /* ── Event binding ────────────────────────────────────────── */
