@@ -16,13 +16,13 @@ const PORT = process.env.PORT || 3000;
 // ── Nodemailer transporter ──────────────────────────────────────
 const smtpPort = Number(process.env.SMTP_PORT) || 587;
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
     port: smtpPort,
-    secure: smtpPort === 465, // true for 465, false for 587 (STARTTLS)
+    secure: false, // Brevo uses STARTTLS on 587
     family: 4, // Force IPv4 — Render free tier blocks IPv6 outbound
     auth: {
-        user: process.env.SMTP_USER || process.env.EMAIL_USER,
-        pass: process.env.SMTP_PASS || process.env.EMAIL_PASS
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     },
     connectionTimeout: 15000,
     greetingTimeout: 15000,
