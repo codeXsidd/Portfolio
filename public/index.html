@@ -18,6 +18,17 @@
         rel="stylesheet">
 
     <link rel="stylesheet" href="/css/style.css">
+
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <script>
+      // ── EmailJS Configuration ───────────────────────────────────
+      // Replace these 3 values with your own from emailjs.com
+      window.EMAILJS_PUBLIC_KEY   = 'YOUR_PUBLIC_KEY';
+      window.EMAILJS_SERVICE_ID   = 'YOUR_SERVICE_ID';
+      window.EMAILJS_TEMPLATE_ID  = 'YOUR_TEMPLATE_ID';
+      emailjs.init({ publicKey: window.EMAILJS_PUBLIC_KEY });
+    </script>
 </head>
 
 <body>

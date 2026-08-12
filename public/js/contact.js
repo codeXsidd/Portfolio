@@ -1,7 +1,7 @@
 /**
  * contact.js — Terminal-Style Contact Form
- * Uses the existing Node.js / Nodemailer backend at /api/contact
- * No SMTP credentials are exposed here.
+ * Uses EmailJS to send emails directly from the browser.
+ * No SMTP credentials exposed. No backend required.
  */
 
 function buildContactForm(term) {
@@ -50,21 +50,20 @@ function buildContactForm(term) {
   [nameF, emailF, subjectF, msgF].forEach(f => fields.appendChild(f.row));
   wrap.appendChild(fields);
 
-  // Actions
-  const actions = document.createElement('div');
-  actions.className = 'contact-actions';
-
-  const sendBtn = document.createElement('button');
-  sendBtn.className = 'btn-send';
+  // Buttons
+  const btnRow = document.createElement('div');
+  btnRow.className = 'contact-btn-row';
+  const sendBtn   = document.createElement('button');
+  sendBtn.className = 'term-btn term-btn-primary';
+  sendBtn.id = 'cf-send';
   sendBtn.textContent = '[ SEND ]';
-
   const cancelBtn = document.createElement('button');
-  cancelBtn.className = 'btn-cancel';
+  cancelBtn.className = 'term-btn';
+  cancelBtn.id = 'cf-cancel';
   cancelBtn.textContent = '[ CANCEL ]';
-
-  actions.appendChild(sendBtn);
-  actions.appendChild(cancelBtn);
-  wrap.appendChild(actions);
+  btnRow.appendChild(sendBtn);
+  btnRow.appendChild(cancelBtn);
+  wrap.appendChild(btnRow);
 
   // Status message
   const statusMsg = document.createElement('div');
@@ -83,7 +82,7 @@ function buildContactForm(term) {
     term.focus();
   });
 
-  // Send logic
+  // Send logic using EmailJS
   sendBtn.addEventListener('click', async () => {
     const name    = nameF.input.value.trim();
     const email   = emailF.input.value.trim();
@@ -100,26 +99,36 @@ function buildContactForm(term) {
     statusMsg.innerHTML = `<span class="c-dim">Sending...</span>`;
 
     try {
-      const res = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, subject, message })
-      });
-      const data = await res.json();
+      // EmailJS send
+      const result = await emailjs.send(
+        window.EMAILJS_SERVICE_ID   || 'YOUR_SERVICE_ID',
+        window.EMAILJS_TEMPLATE_ID  || 'YOUR_TEMPLATE_ID',
+        {
+          from_name:    name,
+          from_email:   email,
+          subject:      subject || '(no subject)',
+          message:      message,
+          reply_to:     email
+        },
+        window.EMAILJS_PUBLIC_KEY   || 'YOUR_PUBLIC_KEY'
+      );
 
-      if (res.ok && data.message === 'success') {
+      if (result.status === 200) {
         wrap.innerHTML = '';
         const success = document.createElement('div');
         success.className = 'banner success';
-        success.innerHTML = `✓ Message sent successfully.<br><span style="font-size:11px;color:var(--t2);margin-top:4px;display:block;">Thank you for contacting Siddharth.</span>`;
+        success.innerHTML = `
+          <div style="font-size:16px;margin-bottom:6px;">✓ Message sent!</div>
+          <div style="font-size:12px;color:var(--t2);">Thank you ${name}. Siddharth will reply to <span style="color:var(--cyan)">${email}</span> soon.</div>
+        `;
         wrap.appendChild(success);
+        term._scrollToBottom();
       } else {
-        statusMsg.innerHTML = `<span class="c-error">✗ ${data.error || 'Message could not be sent. Please try again.'}</span>`;
-        sendBtn.disabled = false;
-        sendBtn.textContent = '[ SEND ]';
+        throw new Error('EmailJS returned status ' + result.status);
       }
     } catch (err) {
-      statusMsg.innerHTML = `<span class="c-error">✗ Network error. Please try again later.</span>`;
+      console.error('EmailJS error:', err);
+      statusMsg.innerHTML = `<span class="c-error">✗ Failed to send. Please try again or email directly at <a href="mailto:siddharth291206@gmail.com" style="color:var(--cyan)">siddharth291206@gmail.com</a></span>`;
       sendBtn.disabled = false;
       sendBtn.textContent = '[ SEND ]';
     }
