@@ -1,0 +1,4 @@
+node_modules/
+.env
+portfolio.db
+.DS_Store

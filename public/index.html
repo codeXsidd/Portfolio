@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Siddharth S — Portfolio OS</title>
+    <meta name="description"
+        content="Interactive terminal portfolio of Siddharth S — Developer, Student, Builder. Explore using CLI commands.">
+    <meta name="theme-color" content="#070A12">
+    <link rel="icon" href="/assets/profile.jpg" type="image/jpeg">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <!-- Background effects -->
+    <div class="bg-glow-cyan" aria-hidden="true"></div>
+    <div class="bg-glow-violet" aria-hidden="true"></div>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="scanlines" aria-hidden="true"></div>
+
+    <!-- Custom cursor -->
+    <div class="cursor-dot" id="cursor-dot" aria-hidden="true"></div>
+    <div class="cursor-ring" id="cursor-ring" aria-hidden="true"></div>
+
+    <!-- ─── Boot Screen ───────────────────────────────────────── -->
+    <div id="boot-screen" role="status" aria-label="Loading portfolio">
+        <div class="boot-box">
+            <div class="boot-header">
+                <div class="boot-title">SIDDHARTH OS</div>
+                <div class="boot-subtitle">PORTFOLIO SYSTEM v2.0</div>
+            </div>
+
+            <div class="boot-progress-wrap">
+                <div class="boot-progress-label">
+                    <span id="boot-progress-label-text">Initializing...</span>
+                    <span id="boot-progress-pct">0%</span>
+                </div>
+                <div class="boot-progress-bar">
+                    <div class="boot-progress-fill" id="boot-progress-fill"></div>
+                </div>
+            </div>
+
+            <div class="boot-log" id="boot-log" aria-live="polite"></div>
+
+            <div class="boot-footer">
+                <div class="boot-ready" id="boot-ready">SYSTEM ONLINE</div>
+                <div class="boot-hint" id="boot-hint">Type <span style="color:var(--cyan)">help</span> to begin
+                    exploring.</div>
+            </div>
+        </div>
+        <button class="boot-skip" id="boot-skip" aria-label="Skip boot sequence">SKIP →</button>
+    </div>
+
+    <!-- ─── Main App ───────────────────────────────────────────── -->
+    <div id="app" aria-hidden="true">
+
+        <aside id="sidebar" role="complementary" aria-label="System information">
+
+            <div class="sb-profile">
+                <div class="sb-avatar-wrap">
+                    <img src="/assets/profile.jpg" alt="Siddharth S" class="sb-avatar">
+                </div>
+                <div class="sb-name-block">
+                    <div class="sb-name">SIDDHARTH S</div>
+                    <div class="sb-role">Developer Portfolio</div>
+                    <div class="sb-status">ONLINE</div>
+                </div>
+            </div>
+
+            <div class="sb-divider"></div>
+
+            <div class="sb-nav">
+                <div class="sb-section-label">EXPLORE</div>
+                <div class="sb-nav-item" data-cmd="run about"><span class="sb-nav-key">ABOUT</span></div>
+                <div class="sb-nav-item" data-cmd="run skills"><span class="sb-nav-key">SKILLS</span></div>
+                <div class="sb-nav-item" data-cmd="run projects"><span class="sb-nav-key">PROJECTS</span></div>
+                <div class="sb-nav-item" data-cmd="run experience"><span class="sb-nav-key">EXPERIENCE</span></div>
+                <div class="sb-nav-item" data-cmd="run resume"><span class="sb-nav-key">RESUME</span></div>
+                <div class="sb-nav-item" data-cmd="run contact"><span class="sb-nav-key">CONTACT</span></div>
+            </div>
+
+            <div class="sb-divider"></div>
+
+            <div class="sb-nav">
+                <div class="sb-section-label">CONNECT</div>
+                <a href="https://github.com/codeXsidd" target="_blank" class="sb-nav-item" style="text-decoration:none;">GitHub</a>
+                <a href="https://linkedin.com/in/siddharth2006" target="_blank" class="sb-nav-item" style="text-decoration:none;">LinkedIn</a>
+                <a href="mailto:siddharth291206@gmail.com" class="sb-nav-item" style="text-decoration:none;">Email</a>
+            </div>
+
+            <div class="sb-footer">
+                <div class="sb-footer-row">
+                    <span>PORTFOLIO OS</span>
+                    <span>v2.0</span>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Main Terminal -->
+        <main id="main" role="main">
+            <div id="terminal-window" role="application" aria-label="Interactive terminal">
+
+                <!-- Terminal Title Bar -->
+                <div id="terminal-header">
+                    <div class="term-controls" aria-hidden="true">
+                        <div class="term-dot red" title="Close"></div>
+                        <div class="term-dot yellow" title="Minimize"></div>
+                        <div class="term-dot green" title="Fullscreen"></div>
+                    </div>
+                    <div class="term-title">
+                        <span style="color:var(--cyan)">siddharth</span>@<span style="color:var(--violet)">portfolio</span>:~
+                    </div>
+                    <div class="term-tag">PORTFOLIO OS v2.0</div>
+                </div>
+
+                <!-- Autocomplete Popup -->
+                <div id="autocomplete-popup" role="listbox" aria-label="Autocomplete suggestions"></div>
+
+                <!-- Terminal Output -->
+                <div id="terminal-output" role="log" aria-live="polite" aria-atomic="false"></div>
+
+                <!-- Input Row -->
+                <div id="terminal-input-row">
+                    <div class="prompt-label" aria-hidden="true">
+                        <span class="prompt-user">siddharth</span><span class="prompt-at">@</span><span
+                            class="prompt-host">portfolio</span><span class="prompt-sym">:</span><span
+                            class="prompt-path" id="prompt-path">~</span><span class="prompt-sym">&nbsp;$</span>
+                    </div>
+                    <input type="text" id="terminal-input" autocomplete="off" autocorrect="off" autocapitalize="off"
+                        spellcheck="false" aria-label="Terminal command input" placeholder="type a command...">
+                </div>
+
+            </div><!-- /terminal-window -->
+        </main>
+
+    </div><!-- /app -->
+
+    <!-- Scripts (order matters) -->
+    <script src="/js/filesystem.js"></script>
+    <script src="/js/commands.js"></script>
+    <script src="/js/autocomplete.js"></script>
+    <script src="/js/contact.js"></script>
+    <script src="/js/terminal.js"></script>
+
+    <script>
+        /* ── Boot Sequence ─────────────────────────────────────────── */
+        (function () {
+            const bootEl = document.getElementById('boot-screen');
+            const fill = document.getElementById('boot-progress-fill');
+            const pctEl = document.getElementById('boot-progress-pct');
+            const logEl = document.getElementById('boot-log');
+            const readyEl = document.getElementById('boot-ready');
+            const hintEl = document.getElementById('boot-hint');
+            const skipBtn = document.getElementById('boot-skip');
+            const app = document.getElementById('app');
+
+            const logItems = [
+                'Initializing kernel',
+                'Loading user profile: siddharth',
+                'Mounting virtual filesystem',
+                'Loading skills module',
+                'Loading projects module',
+                'Loading achievements',
+                'Establishing secure session',
+            ];
+
+            let done = false;
+
+            function finish() {
+                if (done) return;
+                done = true;
+                readyEl.classList.add('visible');
+                hintEl.classList.add('visible');
+                setTimeout(() => {
+                    bootEl.classList.add('hidden');
+                    app.removeAttribute('aria-hidden');
+                    setTimeout(() => {
+                        bootEl.style.display = 'none';
+                        window.TERM = new Terminal();
+                        TERM.welcome();
+                        TERM.focus();
+                    }, 600);
+                }, 1000);
+            }
+
+            // Skip
+            skipBtn.addEventListener('click', () => {
+                logEl.innerHTML = '';
+                logItems.forEach(msg => {
+                    const line = document.createElement('div');
+                    line.className = 'boot-log-line visible';
+                    line.innerHTML = `<span class="ok">[ OK ]</span><span class="msg">${msg}</span>`;
+                    logEl.appendChild(line);
+                });
+                fill.style.width = '100%';
+                pctEl.textContent = '100%';
+                finish();
+            });
+
+            // Reduced motion — skip instantly
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                skipBtn.click();
+                return;
+            }
+
+            // Animate
+            let currentPct = 0;
+            let itemIndex = 0;
+            const totalItems = logItems.length;
+
+            function addLogLine(msg) {
+                const line = document.createElement('div');
+                line.className = 'boot-log-line';
+                line.innerHTML = `<span class="ok">[ OK ]</span><span class="msg">${msg}</span>`;
+                logEl.appendChild(line);
+                requestAnimationFrame(() => line.classList.add('visible'));
+            }
+
+            function step() {
+                if (itemIndex < totalItems) {
+                    addLogLine(logItems[itemIndex]);
+                    itemIndex++;
+                    const targetPct = Math.round((itemIndex / totalItems) * 100);
+                    animatePct(targetPct, step, itemIndex < totalItems ? 320 : 400);
+                } else {
+                    finish();
+                }
+            }
+
+            function animatePct(target, cb, delay) {
+                const duration = 200;
+                const start = currentPct;
+                const startTs = performance.now();
+                function tick(now) {
+                    const t = Math.min((now - startTs) / duration, 1);
+                    const val = Math.round(start + (target - start) * t);
+                    currentPct = val;
+                    fill.style.width = val + '%';
+                    pctEl.textContent = val + '%';
+                    if (t < 1) requestAnimationFrame(tick);
+                    else setTimeout(cb, delay);
+                }
+                requestAnimationFrame(tick);
+            }
+
+            // Start after a brief pause
+            setTimeout(step, 600);
+        })();
+
+        /* ── Custom Cursor ─────────────────────────────────────────── */
+        (function () {
+            const dot = document.getElementById('cursor-dot');
+            const ring = document.getElementById('cursor-ring');
+            if (!dot || !ring) return;
+
+            let mx = -100, my = -100;
+            let rx = -100, ry = -100;
+            let raf;
+
+            document.addEventListener('mousemove', (e) => {
+                mx = e.clientX;
+                my = e.clientY;
+                dot.style.left = mx + 'px';
+                dot.style.top = my + 'px';
+            });
+
+            function animateRing() {
+                rx += (mx - rx) * 0.18;
+                ry += (my - ry) * 0.18;
+                ring.style.left = rx + 'px';
+                ring.style.top = ry + 'px';
+                raf = requestAnimationFrame(animateRing);
+            }
+            animateRing();
+
+            document.addEventListener('mouseover', (e) => {
+                if (e.target.closest('a, button, input, textarea, .sidebar-cmd, .run-card, .term-link')) {
+                    ring.classList.add('hovering');
+                }
+            });
+            document.addEventListener('mouseout', (e) => {
+                if (e.target.closest('a, button, input, textarea, .sidebar-cmd, .run-card, .term-link')) {
+                    ring.classList.remove('hovering');
+                }
+            });
+        })();
+    </script>
+
+</body>
+
+</html>
