@@ -176,7 +176,14 @@ class Terminal {
 
     // Click anywhere in terminal → focus input
     document.getElementById('terminal-window')
-      ?.addEventListener('click', () => this.focus());
+      ?.addEventListener('click', (e) => {
+        const tag = e.target.tagName.toLowerCase();
+        // Don't steal focus if clicking on interactive elements
+        if (['input', 'textarea', 'button', 'a'].includes(tag)) return;
+        // Don't steal focus if the user is highlighting text to copy
+        if (window.getSelection().toString().length > 0) return;
+        this.focus();
+      });
 
     // Sidebar quick commands
     document.querySelectorAll('.sb-nav-item').forEach(el => {
