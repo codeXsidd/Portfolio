@@ -65,7 +65,8 @@ app.post('/api/contact', async (req, res) => {
     }
 
     const mailOptions = {
-        from:    process.env.SMTP_USER || process.env.EMAIL_USER,
+        from:    `"Portfolio Contact" <${process.env.SMTP_USER || process.env.EMAIL_USER}>`,
+        replyTo: `"${name}" <${email}>`,
         to:      process.env.CONTACT_EMAIL || process.env.RECEIVER_EMAIL || process.env.SMTP_USER || process.env.EMAIL_USER,
         subject: `Portfolio Contact: ${subject || '(no subject)'}`,
         text:    `New message from your portfolio.\n\nName:    ${name}\nEmail:   ${email}\nSubject: ${subject || '—'}\n\nMessage:\n${message}`
