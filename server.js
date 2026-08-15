@@ -24,7 +24,7 @@ const transporter = nodemailer.createTransport({
         user: process.env.SMTP_USER, // your Brevo login email
         pass: process.env.SMTP_PASS  // your Brevo SMTP key (NOT your Brevo password)
     },
-    family: 4 // Force IPv4
+    
 });
 
 // ── Middleware ──────────────────────────────────────────────────
