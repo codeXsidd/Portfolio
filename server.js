@@ -17,12 +17,12 @@ const PORT = process.env.PORT || 3000;
 // Brevo SMTP works on Render free tier (port 587 + 2525 both supported)
 // Sign up free at https://app.brevo.com → SMTP & API → SMTP
 const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-    port: Number(process.env.SMTP_PORT) || 2525, // Port 2525 bypasses Render port blocks
-    secure: false, // STARTTLS on port 2525
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: false, // STARTTLS
     auth: {
-        user: process.env.SMTP_USER, // your Brevo login email
-        pass: process.env.SMTP_PASS  // your Brevo SMTP key (NOT your Brevo password)
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS
     },
     family: 4 // Force IPv4
 });
