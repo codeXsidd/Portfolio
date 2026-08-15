@@ -1243,3 +1243,72 @@ body, a, button, input, textarea, [role="button"] { cursor: none !important; }
 .run-card-desc {
   font-size: 11px; color: var(--t3); letter-spacing: 0.05em;
 }
+
+/* ── Contact Form ───────────────────────────────────────────── */
+.contact-form-wrap {
+  border: 1px solid var(--term-border);
+  border-radius: var(--r-sm);
+  padding: 16px;
+  background: var(--bg-1);
+  margin-top: 10px;
+}
+.contact-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 14px 0;
+}
+.contact-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.contact-field label {
+  font-size: 11px;
+  color: var(--t2);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.contact-field input, .contact-field textarea {
+  background: var(--bg-0);
+  border: 1px solid var(--term-border);
+  border-radius: var(--r-xs);
+  padding: 8px 10px;
+  color: var(--t0);
+  font-family: inherit;
+  font-size: 13px;
+  transition: border-color var(--ease);
+  outline: none;
+}
+.contact-field input:focus, .contact-field textarea:focus {
+  border-color: var(--cyan);
+}
+.contact-actions {
+  display: flex;
+  gap: 10px;
+  padding-bottom: 12px;
+}
+.btn-send, .btn-cancel {
+  background: transparent;
+  border: 1px solid var(--term-border);
+  color: var(--t1);
+  padding: 6px 14px;
+  border-radius: var(--r-xs);
+  cursor: pointer;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  transition: all var(--ease);
+}
+.btn-send:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.btn-cancel:hover {
+  border-color: var(--t4);
+  color: var(--t4);
+}
+.btn-send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
