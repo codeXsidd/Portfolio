@@ -113,16 +113,18 @@ function buildContactForm(term) {
       }
     }
 
+    const API = 'https://portfolio-os-diee.onrender.com';
+
     // Wake up the Render server first (it may be sleeping)
     try {
       statusMsg.innerHTML = `<span class="c-dim">Waking up server (may take ~10s)...</span>`;
-      await fetchWithTimeout('/api/health', {}, 20000).catch(() => {});
+      await fetchWithTimeout(`${API}/api/health`, {}, 25000).catch(() => {});
     } catch (_) {}
 
     // Now send the actual request
     try {
       statusMsg.innerHTML = `<span class="c-dim">Sending message...</span>`;
-      const res = await fetchWithTimeout('/api/contact', {
+      const res = await fetchWithTimeout(`${API}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, subject, message })
