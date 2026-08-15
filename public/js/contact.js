@@ -97,14 +97,37 @@ function buildContactForm(term) {
 
     sendBtn.disabled = true;
     sendBtn.textContent = '[ SENDING... ]';
-    statusMsg.innerHTML = `<span class="c-dim">Sending...</span>`;
+    statusMsg.innerHTML = `<span class="c-dim">Connecting to server...</span>`;
 
+    // Helper: fetch with timeout
+    async function fetchWithTimeout(url, options, ms = 30000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), ms);
+      try {
+        const r = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return r;
+      } catch (e) {
+        clearTimeout(timer);
+        throw e;
+      }
+    }
+
+    // Wake up the Render server first (it may be sleeping)
     try {
-      const res = await fetch('/api/contact', {
+      statusMsg.innerHTML = `<span class="c-dim">Waking up server (may take ~10s)...</span>`;
+      await fetchWithTimeout('/api/health', {}, 20000).catch(() => {});
+    } catch (_) {}
+
+    // Now send the actual request
+    try {
+      statusMsg.innerHTML = `<span class="c-dim">Sending message...</span>`;
+      const res = await fetchWithTimeout('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, subject, message })
-      });
+      }, 30000);
+
       const data = await res.json();
 
       if (res.ok && data.message === 'success') {
@@ -117,10 +140,13 @@ function buildContactForm(term) {
         statusMsg.innerHTML = `<span class="c-error">✗ ${data.error || 'Message could not be sent. Please try again.'}</span>`;
         sendBtn.disabled = false;
         sendBtn.textContent = '[ SEND ]';
-        
       }
     } catch (err) {
-      statusMsg.innerHTML = `<span class="c-error">✗ Network error. Please try again later.</span>`;
+      if (err.name === 'AbortError') {
+        statusMsg.innerHTML = `<span class="c-error">✗ Server is waking up. Please try again in 30 seconds.</span>`;
+      } else {
+        statusMsg.innerHTML = `<span class="c-error">✗ Network error. Please try again later.</span>`;
+      }
       sendBtn.disabled = false;
       sendBtn.textContent = '[ SEND ]';
     }

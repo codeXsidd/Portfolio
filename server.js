@@ -43,7 +43,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── GET /api/health ─────────────────────────────────────────────
-
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', service: 'portfolio-api' });
+});
 
 // ── POST /api/contact ───────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
