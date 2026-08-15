@@ -672,7 +672,7 @@ body {
 
 /* ── Skills output ──────────────────────────────────────────── */
 .skills-wrap { display: flex; flex-direction: column; gap: 14px; }
-.skill-group { }
+.skill-group {    }
 .skill-group-name {
   font-size: 9.5px; letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--t4); font-weight: 600; margin-bottom: 6px;

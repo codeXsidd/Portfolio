@@ -43,7 +43,7 @@ function buildContactForm(term) {
   }
 
   const nameF    = makeField('Name',    'text',  'name',    'Your name...');
-  const emailF   = makeField('Email',   'email', 'email',   'your@email.com');
+  const emailF   = makeField('Email',   'email', 'email',   'your@gmail.com');
   const subjectF = makeField('Subject', 'text',  'subject', 'Subject...');
   const msgF     = makeField('Message', 'text',  'message', 'Write your message...', true);
 
@@ -117,6 +117,7 @@ function buildContactForm(term) {
         statusMsg.innerHTML = `<span class="c-error">✗ ${data.error || 'Message could not be sent. Please try again.'}</span>`;
         sendBtn.disabled = false;
         sendBtn.textContent = '[ SEND ]';
+        
       }
     } catch (err) {
       statusMsg.innerHTML = `<span class="c-error">✗ Network error. Please try again later.</span>`;

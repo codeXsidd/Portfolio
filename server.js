@@ -19,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
     port: Number(process.env.SMTP_PORT) || 587,
-    secure: false, // STARTTLS on port 587
+    secure: true, // STARTTLS on port 587
     auth: {
         user: process.env.SMTP_USER, // your Brevo login email
         pass: process.env.SMTP_PASS  // your Brevo SMTP key (NOT your Brevo password)
