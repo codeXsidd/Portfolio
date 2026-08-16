@@ -1,8 +1,5 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://portfolio-os-diee.onrender.com/api/:path*"
-    }
-  ]
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "trailingSlash": false
 }

@@ -100,11 +100,10 @@ function buildContactForm(term) {
     }
   }
 
-  // ── Resolve API base URL ───────────────────────────────────────
-  // On localhost: use same origin (empty string).
-  // In production: use the Render backend URL.
-  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-  const API_BASE = isLocal ? '' : 'https://portfolio-os-diee.onrender.com';
+  // ── API base URL ───────────────────────────────────────────────
+  // Always same-origin: locally server.js handles /api/*, on Vercel
+  // the api/ serverless functions handle /api/* — no hardcoded URLs needed.
+  const API_BASE = '';
 
   // ── Send logic ─────────────────────────────────────────────────
   sendBtn.addEventListener('click', async () => {
@@ -128,24 +127,7 @@ function buildContactForm(term) {
     sendBtn.textContent = '[ SENDING... ]';
     statusMsg.innerHTML = '';
 
-    // ── Step 1: Wake up the server (Render free tier may be sleeping) ──
-    if (!isLocal) {
-      let elapsed = 0;
-      const ticker = setInterval(() => {
-        elapsed++;
-        statusMsg.innerHTML = `<span class="c-dim">⏳ Waking server... ${elapsed}s (may take up to 30s on first use)</span>`;
-      }, 1000);
-
-      try {
-        await fetchWithTimeout(`${API_BASE}/api/health`, {}, 35000);
-      } catch (_) {
-        // Server may still be booting — proceed anyway
-      } finally {
-        clearInterval(ticker);
-      }
-    }
-
-    // ── Step 2: Send the message ───────────────────────────────────
+    // ── Send the message ───────────────────────────────────────────
     try {
       statusMsg.innerHTML = `<span class="c-dim">📨 Sending message...</span>`;
 
