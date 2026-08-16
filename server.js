@@ -1,41 +1,69 @@
 /**
  * server.js — Portfolio Backend
- * Contact form uses Resend (HTTP API) — NOT nodemailer SMTP.
+ * Contact form handled by Nodemailer + Gmail SMTP (port 587 / STARTTLS).
  *
- * WHY RESEND: Render free tier blocks all outbound SMTP (ports 25, 465, 587).
- * Resend uses HTTPS so it works everywhere with zero network restrictions.
- *
- * Setup (one time):
- *   1. Go to https://resend.com → sign up free (3000 emails/month)
- *   2. Create an API key → copy it
- *   3. On Render: Dashboard → Environment → add RESEND_API_KEY=re_xxxx
- *   4. Also set CONTACT_EMAIL=your@gmail.com (where you want to receive messages)
+ * KEY FIX FOR RENDER FREE TIER:
+ *   Render's infrastructure returns only IPv6 addresses from DNS.
+ *   Render free instances have NO IPv6 outbound routing → ENETUNREACH.
+ *   Solution: use dns.resolve4() which explicitly fetches A records (IPv4 only),
+ *   then pass that raw IP as the SMTP host. TLS still validates against
+ *   'smtp.gmail.com' via tls.servername so the certificate check passes.
  */
 
 'use strict';
 
-const express = require('express');
-const cors    = require('cors');
-const path    = require('path');
-const { Resend } = require('resend');
+const dns        = require('dns').promises;
+const express    = require('express');
+const cors       = require('cors');
+const path       = require('path');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Env vars ─────────────────────────────────────────────────────
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const CONTACT_EMAIL  = process.env.CONTACT_EMAIL;
+const SMTP_USER     = process.env.SMTP_USER;
+const SMTP_PASS     = process.env.SMTP_PASS;
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || SMTP_USER;
 
-if (!RESEND_API_KEY) {
-    console.warn('[WARN] RESEND_API_KEY not set — contact form will not send emails.');
-    console.warn('       → Get a free key at https://resend.com and set it on Render.');
-}
-if (!CONTACT_EMAIL) {
-    console.warn('[WARN] CONTACT_EMAIL not set — emails will have no destination address.');
+if (!SMTP_USER || !SMTP_PASS) {
+    console.warn('[smtp] ⚠️  SMTP_USER / SMTP_PASS not set — emails will not send.');
+    console.warn('[smtp]    → On Render: Dashboard → Environment → add SMTP_USER, SMTP_PASS, CONTACT_EMAIL');
 }
 
-const resend = new Resend(RESEND_API_KEY || 'missing');
+// ── Build a nodemailer transporter using a resolved IPv4 address ──
+// dns.resolve4() requests only A records → always returns IPv4 even on Render.
+// We then pass that IP as `host` and set tls.servername so Gmail's TLS cert
+// is still validated correctly against 'smtp.gmail.com'.
+async function buildTransporter() {
+    let smtpHost = 'smtp.gmail.com'; // fallback
+
+    try {
+        const addresses = await dns.resolve4('smtp.gmail.com');
+        smtpHost = addresses[0];
+        console.log(`[smtp] Resolved smtp.gmail.com → ${smtpHost} (IPv4 ✅)`);
+    } catch (err) {
+        console.warn(`[smtp] IPv4 DNS resolve failed (${err.message}), using hostname.`);
+    }
+
+    return nodemailer.createTransport({
+        host:   smtpHost,
+        port:   587,
+        secure: false,             // STARTTLS (upgrades automatically)
+        auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASS
+        },
+        tls: {
+            servername:         'smtp.gmail.com', // validate TLS cert against the real hostname
+            rejectUnauthorized: true
+        },
+        connectionTimeout: 15000,
+        greetingTimeout:   15000,
+        socketTimeout:     20000
+    });
+}
 
 // ── Helpers ──────────────────────────────────────────────────────
 function escapeHtml(str) {
@@ -66,8 +94,7 @@ app.get('/api/health', (req, res) => {
     res.json({
         status:  'ok',
         service: 'portfolio-api',
-        mailer:  'resend',
-        ready:   !!(RESEND_API_KEY && CONTACT_EMAIL)
+        smtp:    !!(SMTP_USER && SMTP_PASS)
     });
 });
 
@@ -96,8 +123,7 @@ setInterval(() => {
 
 // ── POST /api/contact ────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
-    if (!RESEND_API_KEY || !CONTACT_EMAIL) {
-        console.error('[contact] Missing RESEND_API_KEY or CONTACT_EMAIL env vars.');
+    if (!SMTP_USER || !SMTP_PASS) {
         return res.status(503).json({ error: 'Email service not configured.' });
     }
 
@@ -116,11 +142,15 @@ app.post('/api/contact', async (req, res) => {
     }
 
     try {
-        const { data, error } = await resend.emails.send({
-            from:     'Portfolio Contact <onboarding@resend.dev>',
-            reply_to: `${name} <${email}>`,
-            to:       [CONTACT_EMAIL],
-            subject:  subject ? `[Portfolio] ${subject}` : '[Portfolio] New message',
+        // Build a fresh transporter with a resolved IPv4 host each time.
+        // This is lightweight (one DNS query) and ensures we never hit an IPv6 address.
+        const transporter = await buildTransporter();
+
+        const mailOptions = {
+            from:    `"${escapeHtml(name)} via Portfolio" <${SMTP_USER}>`,
+            replyTo: `"${name}" <${email}>`,
+            to:      CONTACT_EMAIL,
+            subject: subject ? `[Portfolio] ${subject}` : '[Portfolio] New message',
             html: `
               <div style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:24px;border-radius:8px;max-width:600px;">
                 <h2 style="color:#00d4ff;margin-top:0;">📨 New Portfolio Message</h2>
@@ -130,17 +160,17 @@ app.post('/api/contact', async (req, res) => {
                 <hr style="border-color:#333;margin:16px 0;">
                 <p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
               </div>`
-        });
+        };
 
-        if (error) {
-            console.error('[contact] ❌ Resend error:', error);
-            return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
-        }
+        const info = await Promise.race([
+            transporter.sendMail(mailOptions),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP timeout')), 25000))
+        ]);
 
-        console.log(`[contact] ✅ Email sent via Resend — id: ${data.id} | from: ${name} <${email}>`);
+        console.log(`[contact] ✅ Sent from ${name} <${email}> — id: ${info.messageId}`);
         res.json({ message: 'success' });
     } catch (err) {
-        console.error('[contact] ❌ Unexpected error:', err.message);
+        console.error('[contact] ❌ Error:', err.message, '| code:', err.code);
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 });
@@ -157,10 +187,22 @@ app.use((err, req, res, next) => {
 // ── Start ────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Server running on port ${PORT}`);
-    console.log(`📧 Mailer: Resend (HTTP API — works on Render free tier)`);
-    if (RESEND_API_KEY && CONTACT_EMAIL) {
-        console.log(`✅ Config OK — emails will be delivered to ${CONTACT_EMAIL}`);
+    if (SMTP_USER && SMTP_PASS) {
+        // Warm up: verify SMTP using an IPv4-resolved transporter
+        buildTransporter()
+            .then(t => t.verify())
+            .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
+            .catch(err => {
+                console.error('[smtp] ❌ SMTP verify failed:', err.message, '| code:', err.code);
+                if (err.code === 'ENETUNREACH') {
+                    console.error('[smtp]    → Network unreachable. Render may be blocking this connection.');
+                } else if (err.responseCode === 535) {
+                    console.error('[smtp]    → Auth failed. Check SMTP_USER and SMTP_PASS on Render.');
+                    console.error('[smtp]    → SMTP_PASS must be a Gmail App Password (not your login password).');
+                    console.error('[smtp]    → Generate one: https://myaccount.google.com/apppasswords');
+                }
+            });
     } else {
-        console.warn(`⚠️  Missing env vars: ${!RESEND_API_KEY ? 'RESEND_API_KEY ' : ''}${!CONTACT_EMAIL ? 'CONTACT_EMAIL' : ''}`);
+        console.warn('[smtp] ⚠️  No credentials — set SMTP_USER, SMTP_PASS, CONTACT_EMAIL on Render');
     }
 });
