@@ -1,9 +1,21 @@
 /**
  * server.js — Portfolio Backend
  * Serves static files and handles the contact form via Nodemailer + Gmail SMTP.
- * Uses a Gmail App Password (16-char, no spaces).
- * Generate one at: https://myaccount.google.com/apppasswords
+ *
+ * FIX: Render free tier blocks outbound IPv6. Gmail's smtp.gmail.com resolves to
+ * an IPv6 address by default in Node 18+. We fix this by:
+ *   1. dns.setDefaultResultOrder('ipv4first') — forces all DNS to prefer IPv4
+ *   2. Custom `lookup` function in nodemailer — guarantees IPv4 for SMTP only
+ *   3. Port 587 + STARTTLS (port 465 also has IPv6 issues on Render)
+ *
+ * Gmail App Password: https://myaccount.google.com/apppasswords
  */
+
+// ── CRITICAL: Force IPv4 DNS before any other requires ──────────
+// Node 18+ changed default DNS order to 'verbatim' which prefers IPv6.
+// Render free tier cannot reach IPv6 addresses — this fixes ENETUNREACH/ESOCKET.
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 
 const express    = require('express');
 const cors       = require('cors');
@@ -21,22 +33,25 @@ const CONTACT_EMAIL = process.env.CONTACT_EMAIL || SMTP_USER;
 
 if (!SMTP_USER || !SMTP_PASS) {
     console.error('[FATAL] SMTP_USER and SMTP_PASS must be set in environment variables.');
-    console.error('        Set them in your .env file (local) or on your hosting dashboard (Render/Railway).');
-    // Don't exit — still serve static files; /api/contact will return a clear error
+    console.error('        → On Render: Dashboard → Environment → add SMTP_USER, SMTP_PASS, CONTACT_EMAIL');
 }
 
-// ── Nodemailer transporter (Gmail SMTP — port 587 STARTTLS, IPv4 forced) ────
-// NOTE: port 465 uses IPv6 on cloud hosts (Render/Railway) which is blocked.
-// Port 587 with STARTTLS + family:4 forces IPv4 and works everywhere.
+// ── Custom IPv4-only DNS lookup (belt-and-suspenders on top of setDefaultResultOrder) ──
+function lookupIPv4(hostname, options, callback) {
+    dns.lookup(hostname, { ...options, family: 4 }, callback);
+}
+
+// ── Nodemailer transporter ───────────────────────────────────────
+// Port 587 + STARTTLS + forced IPv4 = works on Render free tier
 const transporter = nodemailer.createTransport({
     host:   'smtp.gmail.com',
     port:   587,
-    secure: false,           // STARTTLS (upgrades after connect)
+    secure: false,         // false = STARTTLS; true = SSL (port 465, breaks on Render)
     auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
     },
-    family:            4,    // Force IPv4 — Render blocks IPv6 outbound
+    lookup:            lookupIPv4,   // Force IPv4 DNS resolution for this transporter
     connectionTimeout: 15000,
     greetingTimeout:   15000,
     socketTimeout:     20000,
@@ -105,7 +120,7 @@ setInterval(() => {
 app.post('/api/contact', async (req, res) => {
     // Guard: SMTP not configured
     if (!SMTP_USER || !SMTP_PASS) {
-        console.error('[contact] SMTP credentials missing — set SMTP_USER and SMTP_PASS env vars.');
+        console.error('[contact] SMTP credentials missing — set SMTP_USER and SMTP_PASS env vars on Render.');
         return res.status(503).json({
             error: 'Email service is not configured. Please contact the administrator.'
         });
@@ -172,8 +187,14 @@ app.listen(PORT, '0.0.0.0', () => {
     if (SMTP_USER && SMTP_PASS) {
         transporter.verify()
             .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
-            .catch(err  => console.error('[smtp] ❌ SMTP verification failed:', err.message, '\n       → Check your SMTP_USER and SMTP_PASS env vars'));
+            .catch(err  => {
+                console.error('[smtp] ❌ SMTP verification failed:', err.message);
+                console.error('[smtp] Error code:', err.code);
+                console.error('[smtp] → If ENETUNREACH: Render may still block this IP. Check env vars.');
+                console.error('[smtp] → If AUTH: Verify SMTP_USER/SMTP_PASS are correct on Render.');
+            });
     } else {
         console.warn('[smtp] ⚠️  SMTP credentials not set — contact form emails will NOT send');
+        console.warn('[smtp] → Go to Render Dashboard → Environment → add SMTP_USER, SMTP_PASS, CONTACT_EMAIL');
     }
 });
