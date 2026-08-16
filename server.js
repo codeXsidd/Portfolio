@@ -17,7 +17,6 @@ const express    = require('express');
 const cors       = require('cors');
 const path       = require('path');
 const nodemailer = require('nodemailer');
-const rateLimit  = require('express-rate-limit');
 require('dotenv').config();
 
 const app  = express();
@@ -100,15 +99,15 @@ app.get('/api/health', (req, res) => {
 });
 
 // ── Rate limiter (5 req / IP / 15 min) ──────────────────────────
-const contactLimiter = new Map();
+const ipRequestLog = new Map();
 const RATE_LIMIT  = 5;
 const RATE_WINDOW = 15 * 60 * 1000;
 
 function isRateLimited(ip) {
     const now   = Date.now();
-    const entry = contactLimiter.get(ip);
+    const entry = ipRequestLog.get(ip);
     if (!entry || now - entry.start > RATE_WINDOW) {
-        contactLimiter.set(ip, { start: now, count: 1 });
+        ipRequestLog.set(ip, { start: now, count: 1 });
         return false;
     }
     entry.count++;
@@ -117,8 +116,8 @@ function isRateLimited(ip) {
 
 setInterval(() => {
     const now = Date.now();
-    for (const [ip, entry] of contactLimiter) {
-        if (now - entry.start > RATE_WINDOW) contactLimiter.delete(ip);
+    for (const [ip, entry] of ipRequestLog) {
+        if (now - entry.start > RATE_WINDOW) ipRequestLog.delete(ip);
     }
 }, RATE_WINDOW);
 
@@ -213,4 +212,3 @@ if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
 
 // Export the Express app for Vercel serverless function support
 module.exports = app;
-
