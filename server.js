@@ -14,27 +14,38 @@ require('dotenv').config();
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
+// ── Validate required env vars ───────────────────────────────────
+const SMTP_USER     = process.env.SMTP_USER;
+const SMTP_PASS     = process.env.SMTP_PASS;
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || SMTP_USER;
+
+if (!SMTP_USER || !SMTP_PASS) {
+    console.error('[FATAL] SMTP_USER and SMTP_PASS must be set in environment variables.');
+    console.error('        Set them in your .env file (local) or on your hosting dashboard (Render/Railway).');
+    // Don't exit — still serve static files; /api/contact will return a clear error
+}
+
 // ── Nodemailer transporter (Gmail SMTP over SSL on port 465) ────
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465,
     secure: true,
     auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS
+        user: SMTP_USER,
+        pass: SMTP_PASS
     },
     connectionTimeout: 10000,
-    greetingTimeout: 10000,
-    socketTimeout: 15000
+    greetingTimeout:   10000,
+    socketTimeout:     15000
 });
 
 // ── Helpers ─────────────────────────────────────────────────────
 function escapeHtml(str) {
     return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
+        .replace(/&/g,  '&amp;')
+        .replace(/</g,  '&lt;')
+        .replace(/>/g,  '&gt;')
+        .replace(/"/g,  '&quot;');
 }
 
 // ── Middleware ──────────────────────────────────────────────────
@@ -54,16 +65,20 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── GET /api/health ─────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', service: 'portfolio-api' });
+    res.json({
+        status:  'ok',
+        service: 'portfolio-api',
+        smtp:    !!(SMTP_USER && SMTP_PASS)
+    });
 });
 
 // ── Simple rate limiter (5 requests per IP per 15 minutes) ──────
 const contactLimiter = new Map();
-const RATE_LIMIT = 5;
+const RATE_LIMIT  = 5;
 const RATE_WINDOW = 15 * 60 * 1000;
 
 function isRateLimited(ip) {
-    const now = Date.now();
+    const now   = Date.now();
     const entry = contactLimiter.get(ip);
     if (!entry || now - entry.start > RATE_WINDOW) {
         contactLimiter.set(ip, { start: now, count: 1 });
@@ -82,7 +97,15 @@ setInterval(() => {
 
 // ── POST /api/contact ───────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
-    const clientIp = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    // Guard: SMTP not configured
+    if (!SMTP_USER || !SMTP_PASS) {
+        console.error('[contact] SMTP credentials missing — set SMTP_USER and SMTP_PASS env vars.');
+        return res.status(503).json({
+            error: 'Email service is not configured. Please contact the administrator.'
+        });
+    }
+
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || 'unknown';
     if (isRateLimited(clientIp)) {
         return res.status(429).json({ error: 'Too many requests. Please try again later.' });
     }
@@ -97,38 +120,54 @@ app.post('/api/contact', async (req, res) => {
         return res.status(400).json({ error: 'Invalid email address.' });
     }
 
-    const toEmail = process.env.CONTACT_EMAIL || process.env.SMTP_USER;
-
     const mailOptions = {
-        from: `"${escapeHtml(name)} via Portfolio" <${process.env.SMTP_USER}>`,
+        from:    `"${escapeHtml(name)} via Portfolio" <${SMTP_USER}>`,
         replyTo: `"${name}" <${email}>`,
-        to: toEmail,
-        subject: subject || 'New message',
+        to:      CONTACT_EMAIL,
+        subject: subject ? `[Portfolio] ${subject}` : '[Portfolio] New message',
         html: `
-      <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-      <p><strong>Email:</strong> ${escapeHtml(email)}</p>
-      <p><strong>Subject:</strong> ${escapeHtml(subject)}</p>
-      <p><strong>Message:</strong><br />${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+      <div style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:24px;border-radius:8px;max-width:600px;">
+        <h2 style="color:#00d4ff;margin-top:0;">📨 New Portfolio Message</h2>
+        <p><strong>Name:</strong> ${escapeHtml(name)}</p>
+        <p><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#00d4ff;">${escapeHtml(email)}</a></p>
+        <p><strong>Subject:</strong> ${escapeHtml(subject || '(none)')}</p>
+        <hr style="border-color:#333;margin:16px 0;">
+        <p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+      </div>
     `
     };
 
     try {
-        await Promise.race([
+        const info = await Promise.race([
             transporter.sendMail(mailOptions),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP timeout')), 20000))
+            new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP timeout after 20s')), 20000))
         ]);
-        console.log(`[contact] Email sent from ${name} <${email}>`);
+        console.log(`[contact] ✅ Email sent from ${name} <${email}> — messageId: ${info.messageId}`);
         res.json({ message: 'success' });
     } catch (err) {
-        console.error('[contact] Email error:', err.message);
+        console.error('[contact] ❌ Email error:', err.message);
+        console.error('[contact] Error code:', err.code);
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 });
 
+// ── Global JSON parse error handler ────────────────────────────
+app.use((err, req, res, next) => {
+    if (err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'Invalid JSON in request body.' });
+    }
+    console.error('[server] Unhandled error:', err.message);
+    res.status(500).json({ error: 'Internal server error.' });
+});
+
 // ── Start ───────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running at http://0.0.0.0:${PORT}`);
-    transporter.verify()
-        .then(() => console.log('[smtp] Gmail SMTP ready'))
-        .catch(err => console.error('[smtp] SMTP failed:', err.message));
+    console.log(`✅ Server running at http://0.0.0.0:${PORT}`);
+    if (SMTP_USER && SMTP_PASS) {
+        transporter.verify()
+            .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
+            .catch(err  => console.error('[smtp] ❌ SMTP verification failed:', err.message, '\n       → Check your SMTP_USER and SMTP_PASS env vars'));
+    } else {
+        console.warn('[smtp] ⚠️  SMTP credentials not set — contact form emails will NOT send');
+    }
 });

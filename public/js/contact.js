@@ -56,10 +56,12 @@ function buildContactForm(term) {
 
   const sendBtn = document.createElement('button');
   sendBtn.className = 'btn-send';
+  sendBtn.id = 'contact-send-btn';
   sendBtn.textContent = '[ SEND ]';
 
   const cancelBtn = document.createElement('button');
   cancelBtn.className = 'btn-cancel';
+  cancelBtn.id = 'contact-cancel-btn';
   cancelBtn.textContent = '[ CANCEL ]';
 
   actions.appendChild(sendBtn);
@@ -68,7 +70,8 @@ function buildContactForm(term) {
 
   // Status message
   const statusMsg = document.createElement('div');
-  statusMsg.style.cssText = 'padding:0 16px 12px;font-size:12px;';
+  statusMsg.id = 'contact-status';
+  statusMsg.style.cssText = 'padding:0 16px 12px;font-size:12px;min-height:20px;';
   wrap.appendChild(statusMsg);
 
   // Cancel logic
@@ -83,82 +86,129 @@ function buildContactForm(term) {
     term.focus();
   });
 
-  // Send logic
+  // ── Fetch with timeout helper ──────────────────────────────────
+  async function fetchWithTimeout(url, options, ms) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    try {
+      const r = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(timer);
+      return r;
+    } catch (e) {
+      clearTimeout(timer);
+      throw e;
+    }
+  }
+
+  // ── Resolve API base URL ───────────────────────────────────────
+  // On localhost: use same origin (empty string).
+  // In production: use the Render backend URL.
+  const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  const API_BASE = isLocal ? '' : 'https://portfolio-os-diee.onrender.com';
+
+  // ── Send logic ─────────────────────────────────────────────────
   sendBtn.addEventListener('click', async () => {
     const name    = nameF.input.value.trim();
     const email   = emailF.input.value.trim();
     const subject = subjectF.input.value.trim();
     const message = msgF.input.value.trim();
 
+    // Client-side validation
     if (!name || !email || !message) {
       statusMsg.innerHTML = `<span class="c-error">✗ Name, Email, and Message are required.</span>`;
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      statusMsg.innerHTML = `<span class="c-error">✗ Please enter a valid email address.</span>`;
+      return;
+    }
 
     sendBtn.disabled = true;
+    cancelBtn.disabled = true;
     sendBtn.textContent = '[ SENDING... ]';
+    statusMsg.innerHTML = '';
 
-    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
-    const API = isLocal ? '' : 'https://portfolio-os-diee.onrender.com';
+    // ── Step 1: Wake up the server (Render free tier may be sleeping) ──
+    if (!isLocal) {
+      let elapsed = 0;
+      const ticker = setInterval(() => {
+        elapsed++;
+        statusMsg.innerHTML = `<span class="c-dim">⏳ Waking server... ${elapsed}s (may take up to 30s on first use)</span>`;
+      }, 1000);
 
-    async function fetchWithTimeout(url, options, ms) {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), ms);
       try {
-        const r = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(timer);
-        return r;
-      } catch (e) {
-        clearTimeout(timer);
-        throw e;
+        await fetchWithTimeout(`${API_BASE}/api/health`, {}, 35000);
+      } catch (_) {
+        // Server may still be booting — proceed anyway
+      } finally {
+        clearInterval(ticker);
       }
     }
 
-    let elapsed = 0;
-    const interval = setInterval(() => {
-      elapsed++;
-      statusMsg.innerHTML = `<span class="c-dim">⏳ Waking up server... ${elapsed}s</span>`;
-    }, 1000);
-
-    try {
-      await fetchWithTimeout(`${API}/api/health`, {}, 60000);
-    } catch (_) {
-      // Server may still be booting — proceed to try the actual POST
-    } finally {
-      clearInterval(interval);
-    }
-
+    // ── Step 2: Send the message ───────────────────────────────────
     try {
       statusMsg.innerHTML = `<span class="c-dim">📨 Sending message...</span>`;
-      const res = await fetchWithTimeout(`${API}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, subject, message })
-      }, 30000);
 
-      const data = await res.json();
+      const res = await fetchWithTimeout(
+        `${API_BASE}/api/contact`,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ name, email, subject, message })
+        },
+        30000
+      );
+
+      let data = {};
+      try {
+        data = await res.json();
+      } catch (_) {
+        // Response wasn't JSON
+      }
 
       if (res.ok && data.message === 'success') {
+        // ── Success ──
         wrap.innerHTML = '';
-        const success = document.createElement('div');
-        success.className = 'banner success';
-        success.innerHTML = `✓ Message sent successfully.<br><span style="font-size:11px;color:var(--t2);margin-top:4px;display:block;">Thank you for contacting Siddharth.</span>`;
-        wrap.appendChild(success);
-      } else {
-        statusMsg.innerHTML = `<span class="c-error">✗ ${data.error || 'Message could not be sent. Please try again.'}</span>`;
+        const banner = document.createElement('div');
+        banner.className = 'banner success';
+        banner.innerHTML = `
+          ✓ Message sent successfully!<br>
+          <span style="font-size:11px;color:var(--t2);margin-top:6px;display:block;">
+            Thank you for reaching out, Siddharth will get back to you soon.
+          </span>`;
+        wrap.appendChild(banner);
+      } else if (res.status === 429) {
+        statusMsg.innerHTML = `<span class="c-error">✗ Too many requests. Please wait 15 minutes and try again.</span>`;
         sendBtn.disabled = false;
+        cancelBtn.disabled = false;
+        sendBtn.textContent = '[ SEND ]';
+      } else if (res.status === 503) {
+        statusMsg.innerHTML = `<span class="c-error">✗ Email service temporarily unavailable. Please try emailing directly.</span>`;
+        sendBtn.disabled = false;
+        cancelBtn.disabled = false;
+        sendBtn.textContent = '[ SEND ]';
+      } else {
+        const errMsg = data.error || 'Message could not be sent. Please try again.';
+        statusMsg.innerHTML = `<span class="c-error">✗ ${errMsg}</span>`;
+        sendBtn.disabled = false;
+        cancelBtn.disabled = false;
         sendBtn.textContent = '[ SEND ]';
       }
     } catch (err) {
-      statusMsg.innerHTML = `<span class="c-error">✗ Server is still starting up. Please wait a moment and try again.</span>`;
+      if (err.name === 'AbortError') {
+        statusMsg.innerHTML = `<span class="c-error">✗ Request timed out. The server may be overloaded — please try again.</span>`;
+      } else {
+        statusMsg.innerHTML = `<span class="c-error">✗ Could not reach server. Check your connection and try again.</span>`;
+      }
       sendBtn.disabled = false;
+      cancelBtn.disabled = false;
       sendBtn.textContent = '[ SEND ]';
     }
 
     term._scrollToBottom();
   });
 
-  // Focus first field
+  // Focus first field on open
   setTimeout(() => nameF.input.focus(), 50);
 
   return wrap;
