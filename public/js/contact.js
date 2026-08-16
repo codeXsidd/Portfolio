@@ -101,9 +101,11 @@ function buildContactForm(term) {
   }
 
   // ── API base URL ───────────────────────────────────────────────
-  // Always same-origin: locally server.js handles /api/*, on Vercel
-  // the api/ serverless functions handle /api/* — no hardcoded URLs needed.
-  const API_BASE = '';
+  // If hosted on Render, route API calls to Vercel (since Render blocks SMTP).
+  // Otherwise, use same origin (Vercel or localhost).
+  const API_BASE = (location.hostname === 'portfolio-os-diee.onrender.com') 
+    ? 'https://siddharths.dev' 
+    : '';
 
   // ── Send logic ─────────────────────────────────────────────────
   sendBtn.addEventListener('click', async () => {
