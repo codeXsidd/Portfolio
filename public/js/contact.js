@@ -97,10 +97,11 @@ function buildContactForm(term) {
 
     sendBtn.disabled = true;
     sendBtn.textContent = '[ SENDING... ]';
-    statusMsg.innerHTML = `<span class="c-dim">Connecting to server...</span>`;
 
-    // Helper: fetch with timeout
-    async function fetchWithTimeout(url, options, ms = 30000) {
+    const isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    const API = isLocal ? '' : 'https://portfolio-os-diee.onrender.com';
+
+    async function fetchWithTimeout(url, options, ms) {
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), ms);
       try {
@@ -113,17 +114,22 @@ function buildContactForm(term) {
       }
     }
 
-    const API = 'https://portfolio-os-diee.onrender.com';
+    let elapsed = 0;
+    const interval = setInterval(() => {
+      elapsed++;
+      statusMsg.innerHTML = `<span class="c-dim">⏳ Waking up server... ${elapsed}s</span>`;
+    }, 1000);
 
-    // Wake up the Render server first (it may be sleeping)
     try {
-      statusMsg.innerHTML = `<span class="c-dim">Waking up server (may take ~10s)...</span>`;
-      await fetchWithTimeout(`${API}/api/health`, {}, 25000).catch(() => {});
-    } catch (_) {}
+      await fetchWithTimeout(`${API}/api/health`, {}, 60000);
+    } catch (_) {
+      // Server may still be booting — proceed to try the actual POST
+    } finally {
+      clearInterval(interval);
+    }
 
-    // Now send the actual request
     try {
-      statusMsg.innerHTML = `<span class="c-dim">Sending message...</span>`;
+      statusMsg.innerHTML = `<span class="c-dim">📨 Sending message...</span>`;
       const res = await fetchWithTimeout(`${API}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -144,11 +150,7 @@ function buildContactForm(term) {
         sendBtn.textContent = '[ SEND ]';
       }
     } catch (err) {
-      if (err.name === 'AbortError') {
-        statusMsg.innerHTML = `<span class="c-error">✗ Server is waking up. Please try again in 30 seconds.</span>`;
-      } else {
-        statusMsg.innerHTML = `<span class="c-error">✗ Network error. Please try again later.</span>`;
-      }
+      statusMsg.innerHTML = `<span class="c-error">✗ Server is still starting up. Please wait a moment and try again.</span>`;
       sendBtn.disabled = false;
       sendBtn.textContent = '[ SEND ]';
     }

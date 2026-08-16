@@ -266,7 +266,8 @@ const COMMANDS = {
   },
 
   ls(args, term) {
-    const items = fsList(term.currentNode(), true);
+    const showAll = args.includes('-a') || args.includes('-la');
+    const items = fsList(term.currentNode(), showAll);
     if (!items.length) {
       return h('div', 'c-dim', '(empty directory)');
     }
@@ -512,7 +513,21 @@ const COMMANDS = {
         wrap.appendChild(tip);
         return wrap;
       },
-      skills: () => COMMANDS.cat(['skills/programming.txt'], term),
+      skills: () => {
+        const wrap = h('div', '');
+        const heading = h('div', 'sec-heading', 'SKILLS');
+        wrap.appendChild(heading);
+        const skillsDir = FILESYSTEM.children.skills.children;
+        Object.entries(skillsDir).forEach(([fname, node]) => {
+          const section = h('div', '');
+          section.style.marginBottom = '12px';
+          const pre = renderPlain(node.content);
+          section.appendChild(pre);
+          wrap.appendChild(section);
+        });
+        return wrap;
+      },
+      experience: () => COMMANDS.cat(['experience/experience.txt'], term),
     };
 
     if (!action) {
@@ -522,6 +537,7 @@ const COMMANDS = {
           <span class="help-cmd">run about</span><span class="help-desc">Show developer profile</span>
           <span class="help-cmd">run projects</span><span class="help-desc">Projects overview</span>
           <span class="help-cmd">run skills</span><span class="help-desc">Skills summary</span>
+          <span class="help-cmd">run experience</span><span class="help-desc">Show experience & coding profiles</span>
           <span class="help-cmd">run resume</span><span class="help-desc">Open resume PDF</span>
           <span class="help-cmd">run contact</span><span class="help-desc">Send a message</span>
           <span class="help-cmd">run github</span><span class="help-desc">Open GitHub profile</span>
