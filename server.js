@@ -25,18 +25,24 @@ if (!SMTP_USER || !SMTP_PASS) {
     // Don't exit — still serve static files; /api/contact will return a clear error
 }
 
-// ── Nodemailer transporter (Gmail SMTP over SSL on port 465) ────
+// ── Nodemailer transporter (Gmail SMTP — port 587 STARTTLS, IPv4 forced) ────
+// NOTE: port 465 uses IPv6 on cloud hosts (Render/Railway) which is blocked.
+// Port 587 with STARTTLS + family:4 forces IPv4 and works everywhere.
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    host:   'smtp.gmail.com',
+    port:   587,
+    secure: false,           // STARTTLS (upgrades after connect)
     auth: {
         user: SMTP_USER,
         pass: SMTP_PASS
     },
-    connectionTimeout: 10000,
-    greetingTimeout:   10000,
-    socketTimeout:     15000
+    family:            4,    // Force IPv4 — Render blocks IPv6 outbound
+    connectionTimeout: 15000,
+    greetingTimeout:   15000,
+    socketTimeout:     20000,
+    tls: {
+        rejectUnauthorized: true
+    }
 });
 
 // ── Helpers ─────────────────────────────────────────────────────
