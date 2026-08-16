@@ -185,24 +185,31 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`✅ Server running on port ${PORT}`);
-    if (SMTP_USER && SMTP_PASS) {
-        // Warm up: verify SMTP using an IPv4-resolved transporter
-        buildTransporter()
-            .then(t => t.verify())
-            .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
-            .catch(err => {
-                console.error('[smtp] ❌ SMTP verify failed:', err.message, '| code:', err.code);
-                if (err.code === 'ENETUNREACH') {
-                    console.error('[smtp]    → Network unreachable. Render may be blocking this connection.');
-                } else if (err.responseCode === 535) {
-                    console.error('[smtp]    → Auth failed. Check SMTP_USER and SMTP_PASS on Render.');
-                    console.error('[smtp]    → SMTP_PASS must be a Gmail App Password (not your login password).');
-                    console.error('[smtp]    → Generate one: https://myaccount.google.com/apppasswords');
-                }
-            });
-    } else {
-        console.warn('[smtp] ⚠️  No credentials — set SMTP_USER, SMTP_PASS, CONTACT_EMAIL on Render');
-    }
-});
+// If we are not in a serverless environment (like Vercel), start the server
+if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`✅ Server running on port ${PORT}`);
+        if (SMTP_USER && SMTP_PASS) {
+            // Warm up: verify SMTP using an IPv4-resolved transporter
+            buildTransporter()
+                .then(t => t.verify())
+                .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
+                .catch(err => {
+                    console.error('[smtp] ❌ SMTP verify failed:', err.message, '| code:', err.code);
+                    if (err.code === 'ENETUNREACH') {
+                        console.error('[smtp]    → Network unreachable. Render may be blocking this connection.');
+                    } else if (err.responseCode === 535) {
+                        console.error('[smtp]    → Auth failed. Check SMTP_USER and SMTP_PASS on Render.');
+                        console.error('[smtp]    → SMTP_PASS must be a Gmail App Password (not your login password).');
+                        console.error('[smtp]    → Generate one: https://myaccount.google.com/apppasswords');
+                    }
+                });
+        } else {
+            console.warn('[smtp] ⚠️  No credentials — set SMTP_USER, SMTP_PASS, CONTACT_EMAIL on Render');
+        }
+    });
+}
+
+// Export the Express app for Vercel serverless function support
+module.exports = app;
+
