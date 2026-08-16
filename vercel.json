@@ -1,5 +1,13 @@
 {
-  "outputDirectory": "public",
-  "cleanUrls": true,
-  "trailingSlash": false
+  "version": 2,
+  "builds": [
+    { "src": "api/contact.js", "use": "@vercel/node" },
+    { "src": "api/health.js",  "use": "@vercel/node" },
+    { "src": "public/**",      "use": "@vercel/static" }
+  ],
+  "routes": [
+    { "src": "/api/contact", "dest": "/api/contact.js" },
+    { "src": "/api/health",  "dest": "/api/health.js"  },
+    { "src": "/(.*)",        "dest": "/public/$1"       }
+  ]
 }
