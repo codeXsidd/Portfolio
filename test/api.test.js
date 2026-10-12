@@ -201,6 +201,81 @@ async function runTests() {
     assert.strictEqual(sentMails[0].to, 'owner@example.com');
   });
 
+  await testAsync('contact.js correctly parses stringified JSON body', async () => {
+    sentMails = [];
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      headers: { 'x-forwarded-for': '10.0.0.6' },
+      body: JSON.stringify({ name: 'Alice', email: 'alice@example.com', message: 'String payload' })
+    });
+    await vercelContact(req, res);
+    assert.strictEqual(res.statusCode, 200);
+    assert.strictEqual(res.data.message, 'success');
+  });
+
+  await testAsync('contact.js returns 400 on malformed JSON string body', async () => {
+    const { req, res } = createMockReqRes({
+      method: 'POST',
+      headers: { 'x-forwarded-for': '10.0.0.7' },
+      body: '{ not valid json '
+    });
+    await vercelContact(req, res);
+    assert.strictEqual(res.statusCode, 400);
+    assert.strictEqual(res.data.error, 'Invalid JSON in request body.');
+  });
+
+  await testAsync('contact.js returns 503 when SMTP_USER or SMTP_PASS is missing', async () => {
+    const origUser = process.env.SMTP_USER;
+    try {
+      delete process.env.SMTP_USER;
+      const { req, res } = createMockReqRes({
+        method: 'POST',
+        headers: { 'x-forwarded-for': '10.0.0.8' },
+        body: { name: 'Alice', email: 'alice@example.com', message: 'Hello' }
+      });
+      await vercelContact(req, res);
+      assert.strictEqual(res.statusCode, 503);
+      assert.strictEqual(res.data.error, 'Email service not configured.');
+    } finally {
+      process.env.SMTP_USER = origUser;
+    }
+  });
+
+  await testAsync('contact.js returns 500 when Gmail SMTP authentication fails (535)', async () => {
+    mockSendMailError = new Error('Invalid login: 535-5.7.8 Username and Password not accepted');
+    mockSendMailError.code = 'EAUTH';
+    mockSendMailError.responseCode = 535;
+    try {
+      const { req, res } = createMockReqRes({
+        method: 'POST',
+        headers: { 'x-forwarded-for': '10.0.0.9' },
+        body: { name: 'Alice', email: 'alice@example.com', message: 'Hello' }
+      });
+      await vercelContact(req, res);
+      assert.strictEqual(res.statusCode, 500);
+      assert.strictEqual(res.data.error, 'Failed to send email. Please try again later.');
+    } finally {
+      mockSendMailError = null;
+    }
+  });
+
+  await testAsync('contact.js returns 504 when SMTP connection times out', async () => {
+    mockSendMailError = new Error('Connection timed out');
+    mockSendMailError.code = 'ETIMEDOUT';
+    try {
+      const { req, res } = createMockReqRes({
+        method: 'POST',
+        headers: { 'x-forwarded-for': '10.0.0.10' },
+        body: { name: 'Alice', email: 'alice@example.com', message: 'Hello' }
+      });
+      await vercelContact(req, res);
+      assert.strictEqual(res.statusCode, 504);
+      assert.strictEqual(res.data.error, 'Email service timed out. Please try again later.');
+    } finally {
+      mockSendMailError = null;
+    }
+  });
+
   await testAsync('contact.js enforces per-instance rate limiting (429)', async () => {
     const ip = '10.0.0.99';
     let lastRes;
@@ -273,6 +348,89 @@ async function runTests() {
     if (server.closeAllConnections) server.closeAllConnections();
     await new Promise(resolve => server.close(resolve));
   }
+
+  console.log('\n--- 4. Frontend Response Interpretation & Diagnostics ---');
+  // Replicate the frontend response evaluation function from public/js/contact.js
+  function interpretResponse(status, contentType, responseBodyText) {
+    let data = null;
+    if (contentType.includes('application/json')) {
+      try {
+        data = JSON.parse(responseBodyText);
+      } catch (_) {}
+    }
+
+    if (status === 200 && data && data.message === 'success') {
+      return { success: true, message: 'Message sent successfully!' };
+    }
+    if (status === 404) {
+      return { success: false, error: 'API endpoint not found (HTTP 404). Backend service unavailable.' };
+    }
+    if (status === 405) {
+      return { success: false, error: 'Request method not allowed (HTTP 405).' };
+    }
+    if (status === 429) {
+      return { success: false, error: 'Too many requests (HTTP 429). Please wait 15 minutes and try again.' };
+    }
+    if (status === 503) {
+      return { success: false, error: 'Email service temporarily unavailable (HTTP 503). Please email directly.' };
+    }
+    if (status === 504) {
+      return { success: false, error: 'Gateway timeout (HTTP 504). The server took too long to respond.' };
+    }
+    if (status === 500) {
+      const errMsg = (data && typeof data.error === 'string') ? data.error : 'Failed to send email. Please try again later.';
+      return { success: false, error: errMsg };
+    }
+    const errMsg = (data && typeof data.error === 'string') ? data.error : `Request failed (HTTP ${status}).`;
+    return { success: false, error: errMsg };
+  }
+
+  test('Frontend correctly identifies HTTP 404 with non-JSON plain text body', () => {
+    const res = interpretResponse(404, 'text/plain', 'The page could not be found\n\nNOT_FOUND');
+    assert.strictEqual(res.success, false);
+    assert.match(res.error, /API endpoint not found \(HTTP 404\)/);
+  });
+
+  test('Frontend correctly identifies HTTP 405 Method Not Allowed', () => {
+    const res = interpretResponse(405, 'application/json', '{"error":"Method not allowed."}');
+    assert.strictEqual(res.success, false);
+    assert.match(res.error, /HTTP 405/);
+  });
+
+  test('Frontend correctly handles HTTP 429 Rate Limit', () => {
+    const res = interpretResponse(429, 'application/json', '{"error":"Too many requests"}');
+    assert.strictEqual(res.success, false);
+    assert.match(res.error, /Too many requests \(HTTP 429\)/);
+  });
+
+  test('Frontend correctly handles HTTP 503 Service Unavailable', () => {
+    const res = interpretResponse(503, 'application/json', '{"error":"Email service not configured."}');
+    assert.strictEqual(res.success, false);
+    assert.match(res.error, /Email service temporarily unavailable \(HTTP 503\)/);
+  });
+
+  test('Frontend correctly handles HTTP 504 Gateway Timeout', () => {
+    const res = interpretResponse(504, 'application/json', '{"error":"Email service timed out."}');
+    assert.strictEqual(res.success, false);
+    assert.match(res.error, /Gateway timeout \(HTTP 504\)/);
+  });
+
+  test('Frontend safely renders server 500 errors', () => {
+    const res = interpretResponse(500, 'application/json', '{"error":"Failed to send email. Please try again later."}');
+    assert.strictEqual(res.success, false);
+    assert.strictEqual(res.error, 'Failed to send email. Please try again later.');
+  });
+
+  test('Frontend gracefully handles HTML error pages without crashing JSON parser', () => {
+    const res = interpretResponse(502, 'text/html', '<html><body>Bad Gateway</body></html>');
+    assert.strictEqual(res.success, false);
+    assert.strictEqual(res.error, 'Request failed (HTTP 502).');
+  });
+
+  test('Frontend recognizes valid success response', () => {
+    const res = interpretResponse(200, 'application/json', '{"message":"success"}');
+    assert.strictEqual(res.success, true);
+  });
 
   console.log(`\n========================================`);
   console.log(`Test Results: ${passed} Passed, ${failed} Failed`);

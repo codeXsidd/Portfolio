@@ -107,8 +107,36 @@ function buildContactForm(term) {
     ? 'https://siddharths.dev' 
     : '';
 
+  // Helpers for safe DOM-based status updates
+  function setStatusError(msg) {
+    statusMsg.textContent = '';
+    const span = document.createElement('span');
+    span.className = 'c-error';
+    span.textContent = `✗ ${msg}`;
+    statusMsg.appendChild(span);
+  }
+
+  function setStatusDim(msg) {
+    statusMsg.textContent = '';
+    const span = document.createElement('span');
+    span.className = 'c-dim';
+    span.textContent = msg;
+    statusMsg.appendChild(span);
+  }
+
+  let isSubmitting = false;
+
+  function resetButtons() {
+    isSubmitting = false;
+    sendBtn.disabled = false;
+    cancelBtn.disabled = false;
+    sendBtn.textContent = '[ SEND ]';
+  }
+
   // ── Send logic ─────────────────────────────────────────────────
   sendBtn.addEventListener('click', async () => {
+    if (isSubmitting) return;
+
     const name    = nameF.input.value.trim();
     const email   = emailF.input.value.trim();
     const subject = subjectF.input.value.trim();
@@ -116,22 +144,23 @@ function buildContactForm(term) {
 
     // Client-side validation
     if (!name || !email || !message) {
-      statusMsg.innerHTML = `<span class="c-error">✗ Name, Email, and Message are required.</span>`;
+      setStatusError('Name, Email, and Message are required.');
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      statusMsg.innerHTML = `<span class="c-error">✗ Please enter a valid email address.</span>`;
+      setStatusError('Please enter a valid email address.');
       return;
     }
 
+    isSubmitting = true;
     sendBtn.disabled = true;
     cancelBtn.disabled = true;
     sendBtn.textContent = '[ SENDING... ]';
-    statusMsg.innerHTML = '';
+    statusMsg.textContent = '';
 
     // ── Send the message ───────────────────────────────────────────
     try {
-      statusMsg.innerHTML = `<span class="c-dim">📨 Sending message...</span>`;
+      setStatusDim('📨 Sending message...');
 
       const res = await fetchWithTimeout(
         `${API_BASE}/api/contact`,
@@ -143,14 +172,22 @@ function buildContactForm(term) {
         30000
       );
 
-      let data = {};
-      try {
-        data = await res.json();
-      } catch (_) {
-        // Response wasn't JSON
+      let data = null;
+      const contentType = res.headers.get('content-type') || '';
+      if (contentType.includes('application/json')) {
+        try {
+          data = await res.json();
+        } catch (parseErr) {
+          console.warn('[contact] Failed to parse JSON response:', parseErr.message);
+        }
+      } else {
+        try {
+          const textPreview = await res.text();
+          console.warn(`[contact] Non-JSON response received (HTTP ${res.status}):`, textPreview.slice(0, 160));
+        } catch (_) {}
       }
 
-      if (res.ok && data.message === 'success') {
+      if (res.ok && data && data.message === 'success') {
         // ── Success ──
         wrap.innerHTML = '';
         const banner = document.createElement('div');
@@ -161,32 +198,38 @@ function buildContactForm(term) {
             Thank you for reaching out, Siddharth will get back to you soon.
           </span>`;
         wrap.appendChild(banner);
+        return;
+      }
+
+      console.error(`[contact] Request returned HTTP ${res.status} (${res.statusText})`);
+
+      if (res.status === 404) {
+        setStatusError('API endpoint not found (HTTP 404). Backend service unavailable.');
+      } else if (res.status === 405) {
+        setStatusError('Request method not allowed (HTTP 405).');
       } else if (res.status === 429) {
-        statusMsg.innerHTML = `<span class="c-error">✗ Too many requests. Please wait 15 minutes and try again.</span>`;
-        sendBtn.disabled = false;
-        cancelBtn.disabled = false;
-        sendBtn.textContent = '[ SEND ]';
+        setStatusError('Too many requests (HTTP 429). Please wait 15 minutes and try again.');
       } else if (res.status === 503) {
-        statusMsg.innerHTML = `<span class="c-error">✗ Email service temporarily unavailable. Please try emailing directly.</span>`;
-        sendBtn.disabled = false;
-        cancelBtn.disabled = false;
-        sendBtn.textContent = '[ SEND ]';
+        setStatusError('Email service temporarily unavailable (HTTP 503). Please email directly.');
+      } else if (res.status === 504) {
+        setStatusError('Gateway timeout (HTTP 504). The server took too long to respond.');
+      } else if (res.status === 500) {
+        const errMsg = (data && typeof data.error === 'string') ? data.error : 'Failed to send email. Please try again later.';
+        setStatusError(errMsg);
       } else {
-        const errMsg = data.error || 'Message could not be sent. Please try again.';
-        statusMsg.innerHTML = `<span class="c-error">✗ ${errMsg}</span>`;
-        sendBtn.disabled = false;
-        cancelBtn.disabled = false;
-        sendBtn.textContent = '[ SEND ]';
+        const errMsg = (data && typeof data.error === 'string') ? data.error : `Request failed (HTTP ${res.status}).`;
+        setStatusError(errMsg);
       }
+
+      resetButtons();
     } catch (err) {
+      console.error('[contact] Network or timeout failure:', err.name);
       if (err.name === 'AbortError') {
-        statusMsg.innerHTML = `<span class="c-error">✗ Request timed out. The server may be overloaded — please try again.</span>`;
+        setStatusError('Request timed out. The server may be overloaded — please try again.');
       } else {
-        statusMsg.innerHTML = `<span class="c-error">✗ Could not reach server. Check your connection and try again.</span>`;
+        setStatusError('Could not reach server. Check your connection and try again.');
       }
-      sendBtn.disabled = false;
-      cancelBtn.disabled = false;
-      sendBtn.textContent = '[ SEND ]';
+      resetButtons();
     }
 
     term._scrollToBottom();

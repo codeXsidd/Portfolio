@@ -13,14 +13,7 @@
 const dns        = require('dns').promises;
 const nodemailer = require('nodemailer');
 
-const SMTP_USER     = process.env.SMTP_USER;
-const SMTP_PASS     = process.env.SMTP_PASS;
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || SMTP_USER;
-
 // ── In-Memory Rate Limiting (Per-Instance Abuse Protection) ───────
-// Note: In serverless environments, in-memory Maps protect individual lambda instances.
-// Durable, globally coordinated rate limiting across cold starts and separate regions
-// would require an external distributed key-value store (e.g., Upstash Redis or Vercel KV).
 const contactLimiter = new Map();
 const RATE_LIMIT  = 5;
 const RATE_WINDOW = 15 * 60 * 1000;
@@ -45,11 +38,13 @@ function escapeHtml(str) {
         .replace(/'/g,  '&#39;');
 }
 
-async function buildTransporter() {
+async function buildTransporter(smtpUser, smtpPass) {
     let smtpHost = 'smtp.gmail.com';
     try {
-        const [ip] = await dns.resolve4('smtp.gmail.com');
-        smtpHost = ip;
+        const addresses = await dns.resolve4('smtp.gmail.com');
+        if (addresses && addresses.length > 0) {
+            smtpHost = addresses[0];
+        }
     } catch (_) {
         // Fallback to hostname
     }
@@ -57,19 +52,25 @@ async function buildTransporter() {
     return nodemailer.createTransport({
         host:   smtpHost,
         port:   587,
-        secure: false,
-        auth:   { user: SMTP_USER, pass: SMTP_PASS },
+        secure: false, // STARTTLS
+        auth: {
+            user: smtpUser,
+            pass: smtpPass
+        },
         tls: {
             servername:         'smtp.gmail.com',
             rejectUnauthorized: true
         },
-        connectionTimeout: 15000,
-        greetingTimeout:   15000,
-        socketTimeout:     20000
+        connectionTimeout: 10000,
+        greetingTimeout:   10000,
+        socketTimeout:     15000
     });
 }
 
 module.exports = async (req, res) => {
+    // Generate request identifier for safe log tracing
+    const reqId = 'req_' + Date.now().toString(36) + '_' + Math.random().toString(36).substring(2, 7);
+
     // CORS headers
     res.setHeader('Access-Control-Allow-Origin',  '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -83,7 +84,14 @@ module.exports = async (req, res) => {
         return res.status(405).json({ error: 'Method not allowed.' });
     }
 
-    if (!SMTP_USER || !SMTP_PASS) {
+    // Read and sanitize environment variables at runtime
+    const rawUser    = process.env.SMTP_USER ? process.env.SMTP_USER.trim() : '';
+    // Strip spaces if user pasted a 16-character Google App Password with spaces
+    const rawPass    = process.env.SMTP_PASS ? process.env.SMTP_PASS.replace(/\s+/g, '') : '';
+    const rawContact = process.env.CONTACT_EMAIL ? process.env.CONTACT_EMAIL.trim() : rawUser;
+
+    if (!rawUser || !rawPass) {
+        console.warn(`[contact][${reqId}] ⚠️ Missing SMTP_USER or SMTP_PASS`);
         return res.status(503).json({ error: 'Email service not configured.' });
     }
 
@@ -92,7 +100,17 @@ module.exports = async (req, res) => {
         return res.status(429).json({ error: 'Too many requests. Please try again later.' });
     }
 
-    const { name, email, subject, message } = req.body || {};
+    // Resilient body parsing (handles parsed object or raw string)
+    let body = req.body;
+    if (typeof body === 'string') {
+        try {
+            body = JSON.parse(body);
+        } catch (_) {
+            return res.status(400).json({ error: 'Invalid JSON in request body.' });
+        }
+    }
+
+    const { name, email, subject, message } = body || {};
 
     // Validate types
     if (typeof name !== 'string' || typeof email !== 'string' || typeof message !== 'string') {
@@ -124,14 +142,14 @@ module.exports = async (req, res) => {
     }
 
     try {
-        const transporter = await buildTransporter();
+        const transporter = await buildTransporter(rawUser, rawPass);
         const cleanName   = trimmedName.replace(/["\\]/g, '');
 
         const info = await Promise.race([
             transporter.sendMail({
-                from:    `"${cleanName} via Portfolio" <${SMTP_USER}>`,
+                from:    `"${cleanName} via Portfolio" <${rawUser}>`,
                 replyTo: `"${cleanName}" <${trimmedEmail}>`,
-                to:      CONTACT_EMAIL,
+                to:      rawContact,
                 subject: trimmedSubject ? `[Portfolio] ${trimmedSubject}` : '[Portfolio] New message',
                 html: `
                   <div style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:24px;border-radius:8px;max-width:600px;">
@@ -143,13 +161,28 @@ module.exports = async (req, res) => {
                     <p><strong>Message:</strong><br>${escapeHtml(trimmedMessage).replace(/\n/g, '<br>')}</p>
                   </div>`
             }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP timeout')), 25000))
+            new Promise((_, reject) => {
+                const timeoutErr = new Error('SMTP operation timeout');
+                timeoutErr.code = 'ETIMEDOUT';
+                setTimeout(() => reject(timeoutErr), 20000);
+            })
         ]);
 
-        console.log(`[contact] ✅ Email sent successfully (id: ${info.messageId})`);
+        console.log(`[contact][${reqId}] ✅ Email sent successfully (id: ${info.messageId})`);
         return res.status(200).json({ message: 'success' });
     } catch (err) {
-        console.error('[contact] ❌ Error:', err.message, '| code:', err.code);
+        // Safe diagnostic logging: never print passwords or private message bodies
+        console.error(`[contact][${reqId}] ❌ SMTP error:`, {
+            code: err.code || 'UNKNOWN',
+            responseCode: err.responseCode || null,
+            command: err.command || null,
+            message: err.message ? err.message.replace(rawPass || '###', '[REDACTED]') : 'Unknown error'
+        });
+
+        if (err.code === 'ETIMEDOUT' || err.message === 'SMTP operation timeout') {
+            return res.status(504).json({ error: 'Email service timed out. Please try again later.' });
+        }
+
         return res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 };
