@@ -101,10 +101,13 @@ function buildContactForm(term) {
   }
 
   // ── API base URL ───────────────────────────────────────────────
-  // If hosted on Render, route API calls to Vercel (since Render blocks SMTP).
-  // Otherwise, use same origin (Vercel or localhost).
-  const API_BASE = (location.hostname === 'portfolio-os-diee.onrender.com') 
-    ? 'https://siddharths.dev' 
+  // Architecture: Vercel (siddharths.dev) = static frontend only
+  //               Render (portfolio-os-diee.onrender.com) = Node.js/Express backend
+  // When on Vercel → call Render backend for API
+  // When on localhost or Render → use same-origin (relative path)
+  const RENDER_BACKEND = 'https://portfolio-os-diee.onrender.com';
+  const API_BASE = (location.hostname === 'siddharths.dev')
+    ? RENDER_BACKEND
     : '';
 
   // Helpers for safe DOM-based status updates
