@@ -187,15 +187,22 @@ class Terminal {
         this.focus();
       });
 
-    // Sidebar quick commands
-    document.querySelectorAll('.sb-nav-item').forEach(el => {
-      el.addEventListener('click', () => {
+    // Sidebar quick commands (click and keyboard)
+    document.querySelectorAll('.sb-nav-item[data-cmd]').forEach(el => {
+      const trigger = () => {
         const cmd = el.dataset.cmd;
         if (cmd) {
           this.focus();
           this.inputEl.value = cmd;
           this.executeCommand(cmd);
           this.inputEl.value = '';
+        }
+      };
+      el.addEventListener('click', trigger);
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          trigger();
         }
       });
     });

@@ -26,6 +26,43 @@ function handleAutocomplete(term) {
 
   const cmd  = parts[0].toLowerCase();
   const last = parts[parts.length - 1];
+
+  // Subcommands for 'run'
+  if (cmd === 'run') {
+    const runMatches = RUN_ACTIONS.filter(a => a.startsWith(last));
+    if (runMatches.length === 1) {
+      parts[parts.length - 1] = runMatches[0];
+      term.inputEl.value = parts.join(' ');
+      popup.classList.remove('visible');
+    } else if (runMatches.length > 1) {
+      _showPopup(popup, term, runMatches, last, (m) => {
+        parts[parts.length - 1] = m;
+        term.inputEl.value = parts.join(' ');
+      });
+    } else {
+      popup.classList.remove('visible');
+    }
+    return;
+  }
+
+  // Subcommands for 'man'
+  if (cmd === 'man') {
+    const manMatches = MAN_PAGES.filter(m => m.startsWith(last));
+    if (manMatches.length === 1) {
+      parts[parts.length - 1] = manMatches[0];
+      term.inputEl.value = parts.join(' ');
+      popup.classList.remove('visible');
+    } else if (manMatches.length > 1) {
+      _showPopup(popup, term, manMatches, last, (m) => {
+        parts[parts.length - 1] = m;
+        term.inputEl.value = parts.join(' ');
+      });
+    } else {
+      popup.classList.remove('visible');
+    }
+    return;
+  }
+
   const pathParts = last.split('/');
   const filePrefix = pathParts.pop();
   const dirParts   = pathParts;
@@ -56,10 +93,10 @@ function handleAutocomplete(term) {
 
   if (candidates.length === 1) {
     const [name, node] = candidates[0];
-    const suffix = node.type === 'dir' ? '/' : '';
+    const suffix = node.type === 'dir' ? '/' : ' ';
     const prefix = dirParts.length ? dirParts.join('/') + '/' : '';
     parts[parts.length - 1] = prefix + name + suffix;
-    term.inputEl.value = parts.join(' ') + (node.type === 'file' ? '' : '');
+    term.inputEl.value = parts.join(' ');
     popup.classList.remove('visible');
     return;
   }
@@ -94,4 +131,14 @@ function _showPopup(popup, term, items, prefix, onSelect) {
 const ALL_COMMANDS = [
   'help', 'ls', 'cd', 'cat', 'pwd', 'whoami',
   'clear', 'history', 'find', 'run', 'man', 'exit'
+];
+
+const RUN_ACTIONS = [
+  'about', 'projects', 'skills', 'experience',
+  'resume', 'contact', 'github', 'linkedin'
+];
+
+const MAN_PAGES = [
+  'ls', 'cd', 'cat', 'pwd', 'whoami',
+  'find', 'run', 'clear', 'history', 'exit'
 ];

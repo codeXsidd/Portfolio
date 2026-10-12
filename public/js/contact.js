@@ -192,6 +192,48 @@ function buildContactForm(term) {
     term._scrollToBottom();
   });
 
+  // Global Escape shortcut to cancel active form
+  function handleGlobalEsc(e) {
+    if (e.key === 'Escape' && document.body.contains(wrap)) {
+      e.preventDefault();
+      document.removeEventListener('keydown', handleGlobalEsc);
+      cancelBtn.click();
+    }
+  }
+  document.addEventListener('keydown', handleGlobalEsc);
+
+  // Escape key cancels form from anywhere in form
+  wrap.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      document.removeEventListener('keydown', handleGlobalEsc);
+      cancelBtn.click();
+    }
+  });
+
+  // Keyboard shortcuts (Enter to submit, Escape to cancel)
+  [nameF.input, emailF.input, subjectF.input].forEach(inp => {
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendBtn.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelBtn.click();
+      }
+    });
+  });
+
+  msgF.input.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      sendBtn.click();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      cancelBtn.click();
+    }
+  });
+
   // Focus first field on open
   setTimeout(() => nameF.input.focus(), 50);
 

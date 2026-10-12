@@ -18,7 +18,7 @@ const FILESYSTEM = {
           render: 'profile',
           content: {
             name: 'Siddharth S',
-            avatar: '/assets/profile.jpg',
+            avatar: '/assets/profile.webp',
             title: 'Developer  •  Student  •  Builder',
             bio: 'Currently learning, building, experimenting,\nand turning ideas into useful software.',
             location: 'Chennai, Tamil Nadu, India',
@@ -120,38 +120,87 @@ Backend:
   Express.js
 
 Databases:
-  MySQL (relational)
-  SQLite
+  MySQL
+  Supabase
+  MongoDB
 
 APIs & Protocols:
   REST APIs
   JSON
   HTTP / HTTPS`
         },
+        'ai-datascience.txt': {
+          type: 'file',
+          render: 'plain',
+          content: `AI & DATA SCIENCE
+─────────────────
+
+  Machine Learning
+  Data Analysis
+  NumPy
+  Pandas
+  Scikit-learn`
+        },
+        'hardware-iot.txt': {
+          type: 'file',
+          render: 'plain',
+          content: `HARDWARE & IOT
+──────────────
+
+  ESP32
+  Arduino
+  Blynk IoT
+  Sensor Integration`
+        },
         'tools.txt': {
           type: 'file',
           render: 'plain',
-          content: `TOOLS & PLATFORMS
-──────────────────
+          content: `TOOLS & CLOUD
+─────────────
 
 Version Control:
   Git
   GitHub
 
-Development:
+Cloud & Containers:
+  Docker
+  AWS
+
+Development & Design:
   VS Code
-  Node.js / npm
   Postman
+  Figma
+  Node.js / npm
 
 Platforms:
-  Vercel (deployment)
+  Vercel
   GitHub Pages
 
-Problem Solving:
-  GeeksForGeeks  — 250+ problems
-  SkillRack      — 1800+ problems
-  LeetCode       — 200+ problems
-  HackerRank     — 80+ problems`
+Problem Solving & Profiles:
+  GeeksforGeeks : 250+ problems solved
+                  https://www.geeksforgeeks.org/user/siddharth2006
+  SkillRack     : 1800+ problems solved
+  LeetCode      : 200+ problems solved
+                  https://leetcode.com/siddharth2912
+  HackerRank    : 80+ problems solved
+                  https://www.hackerrank.com/siddharth2006`
+        },
+        'coding-profiles.txt': {
+          type: 'file',
+          render: 'plain',
+          content: `CODING PROFILES & PROBLEM SOLVING
+─────────────────────────────────
+
+• GeeksforGeeks : 250+ problems solved
+  https://www.geeksforgeeks.org/user/siddharth2006
+
+• SkillRack     : 1800+ problems solved
+
+• LeetCode      : 200+ problems solved
+  https://leetcode.com/siddharth2912
+
+• HackerRank    : 80+ problems solved
+  https://www.hackerrank.com/siddharth2006`
         },
         'learning.txt': {
           type: 'file',
@@ -181,59 +230,118 @@ Problem Solving:
           render: 'project',
           content: {
             number: '01',
-            title: 'Responsive ToDo List',
-            description: 'A responsive and user-friendly To-Do List application designed to help users manage their daily tasks efficiently. Features real-time feedback, local storage persistence, and a clean Bootstrap-based UI.',
-            stack: ['HTML5', 'CSS3', 'JavaScript'],
+            title: 'Studivexa',
+            description: 'An AI-powered student productivity workspace that combines study planning, task management, habit tracking, academic analytics, and personalized AI learning assistance in one application.',
+            stack: [
+              'React',
+              'Vite',
+              'Tailwind CSS',
+              'Node.js',
+              'Express',
+              'MongoDB',
+              'Google Gemini AI',
+              'JWT Authentication'
+            ],
             features: [
-              'Add, edit, complete, and delete items',
-              'Persistent data via localStorage',
-              'Keyboard shortcuts (Escape to cancel)',
-              'Real-time item feedback with alerts',
-              'Clean and responsive UI'
+              'AI-powered task breakdown and daily study planning',
+              'AI tutor chat and AI-generated flashcards and quizzes',
+              'Study planner, habit tracker, and focus timer',
+              'GPA and CGPA tracking and analytics',
+              'Gamified productivity with XP, levels, and streaks',
+              'Study notes, journal, and learning roadmap'
             ],
             status: 'Completed',
-            github: 'https://github.com/codeXsidd/responsive-to-do-list',
-            demo: 'https://responsive-to-do-list.vercel.app'
+            github: 'https://github.com/codeXsidd/Studivexa',
+            demo: 'https://studivexa.vercel.app/'
           }
         },
+
         'project-02.txt': {
           type: 'file',
           render: 'project',
           content: {
             number: '02',
-            title: 'Share Quiz',
-            description: 'A dynamic web application that lets users create, customize, and share interactive quizzes through a single shareable link. Makes quiz creation intuitive and interactive.',
-            stack: ['HTML5', 'CSS3', 'JavaScript'],
+            title: 'StudyMate',
+            description: 'An AI-powered study companion that transforms uploaded learning documents into interactive quizzes, personalized explanations, visual concept maps, and targeted revision guidance.',
+            stack: [
+              'HTML5',
+              'CSS3',
+              'JavaScript',
+              'Python',
+              'FastAPI',
+              'Groq API',
+              'Supabase',
+              'Mermaid.js'
+            ],
             features: [
-              'Create custom quizzes with multiple questions',
-              'Switch between editor and taker modes',
-              'Generate unique shareable links',
-              'Instant scoring and feedback',
-              'No signup required'
+              'Generate quizzes from uploaded study documents',
+              'Feynman technique simulator for evaluating explanations',
+              'Interactive concept mind maps using Mermaid.js',
+              'Text-to-speech for questions and explanations',
+              'Performance dashboard and weak-area tracking',
+              'Personalized revision recommendations'
             ],
             status: 'Completed',
-            github: 'https://github.com/codeXsidd/share-quiz',
-            demo: 'https://share-quiz.vercel.app'
+            github: 'https://github.com/codeXsidd/studymate',
+            demo: 'https://studymate-beta-six.vercel.app'
           }
         },
+
         'project-03.txt': {
           type: 'file',
           render: 'project',
           content: {
             number: '03',
-            title: 'Notes Nests',
-            description: 'A minimal, Markdown-enabled note-taking web app with autosave and local storage support. Perfect for nesting your ideas effortlessly.',
-            stack: ['HTML5', 'CSS3', 'JavaScript'],
+            title: 'Contract AI',
+            description: 'An AI-powered legal contract analysis platform that helps users extract and analyze contract clauses, generate summaries, identify potential risks, compare documents, and interact with contract content.',
+            stack: [
+              'React',
+              'TypeScript',
+              'Tailwind CSS',
+              'Python',
+              'FastAPI',
+              'Supabase',
+              'Grok API',
+              'FAISS',
+              'spaCy',
+              'PyMuPDF'
+            ],
             features: [
-              'Unlimited sticky notes',
-              'Markdown rendering support',
-              'Autosave with localStorage',
-              'Smart view/edit mode toggle',
-              'Minimalistic, distraction-free UI'
+              'Upload and parse PDF and DOCX contracts',
+              'AI-powered contract summaries and clause extraction',
+              'Risk analysis and red-flag identification',
+              'Retrieval-augmented contract question-answering',
+              'Compliance checklist support',
+              'Contract negotiation assistance and report generation'
+            ],
+            status: 'In Progress',
+            github: 'https://github.com/codeXsidd/Contract-AI',
+            demo: ''
+          }
+        },
+
+        'project-04.txt': {
+          type: 'file',
+          render: 'project',
+          content: {
+            number: '04',
+            title: 'Share Quiz',
+            description: 'A lightweight web application that allows users to create customized interactive quizzes and share them through a unique link, making quizzes easy to distribute and complete.',
+            stack: [
+              'HTML5',
+              'CSS3',
+              'JavaScript'
+            ],
+            features: [
+              'Create quizzes with custom questions',
+              'Switch between quiz editor and quiz taker modes',
+              'Generate shareable quiz links',
+              'Instant scoring and feedback',
+              'Create and complete quizzes without signup'
             ],
             status: 'Completed',
-            github: 'https://github.com/codeXsidd/notes-nests',
-            demo: 'https://notes-nests.vercel.app'
+            github: 'https://github.com/codeXsidd/share-quiz',
+            demo: 'https://share-quiz.vercel.app'
           }
         }
       }
@@ -249,23 +357,25 @@ Problem Solving:
           content: `EXPERIENCE
 ───────────
 
-[PLACEHOLDER — No formal work experience yet]
+Web Development Intern
+Big Bucks Innovation Pvt Ltd
+Chennai, India | June 2025 – June 2025
 
-Currently a student focusing on building
-strong personal projects and competitive
-programming skills.
+• Developed responsive web applications using
+  HTML5, CSS3, and JavaScript, improving
+  usability and cross-browser compatibility.
 
-Coding Profiles:
-  GeeksForGeeks : 250+ problems solved
-                  geeksforgeeks.org/user/siddharth2006
-  SkillRack     : 1800+ problems solved
-  LeetCode      : 200+ problems solved
-                  leetcode.com/siddharth2912
-  HackerRank    : 80+ problems solved
-                  hackerrank.com/siddharth2006
+• Built and tested dynamic user interfaces,
+  supporting application debugging and
+  deployment.
+
+• Applied Git, GitHub, Agile, and SDLC practices
+  for version control, collaboration, and
+  software development.
 
 ─────────────────────────────────────
-Open to internship opportunities.`
+Open to software development and internship
+opportunities.`
         }
       }
     },

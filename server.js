@@ -65,13 +65,16 @@ async function buildTransporter() {
     });
 }
 
+let isSmtpVerified = false;
+
 // ── Helpers ──────────────────────────────────────────────────────
 function escapeHtml(str) {
     return String(str)
         .replace(/&/g,  '&amp;')
         .replace(/</g,  '&lt;')
         .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;');
+        .replace(/"/g,  '&quot;')
+        .replace(/'/g,  '&#39;');
 }
 
 // ── Middleware ───────────────────────────────────────────────────
@@ -83,8 +86,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options('/{*splat}', cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '20kb' }));
+app.use(express.urlencoded({ extended: true, limit: '20kb' }));
 
 // ── Serve static frontend ────────────────────────────────────────
 app.use(express.static(path.join(__dirname, 'public')));
@@ -92,9 +95,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── GET /api/health ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
     res.json({
-        status:  'ok',
-        service: 'portfolio-api',
-        smtp:    !!(SMTP_USER && SMTP_PASS)
+        status:         'ok',
+        service:        'portfolio-api',
+        smtpConfigured: !!(SMTP_USER && SMTP_PASS),
+        smtpVerified:   isSmtpVerified,
+        smtp:           !!(SMTP_USER && SMTP_PASS)
     });
 });
 
@@ -119,7 +124,7 @@ setInterval(() => {
     for (const [ip, entry] of ipRequestLog) {
         if (now - entry.start > RATE_WINDOW) ipRequestLog.delete(ip);
     }
-}, RATE_WINDOW);
+}, RATE_WINDOW).unref();
 
 // ── POST /api/contact ────────────────────────────────────────────
 app.post('/api/contact', async (req, res) => {
@@ -134,31 +139,49 @@ app.post('/api/contact', async (req, res) => {
 
     const { name, email, subject, message } = req.body || {};
 
-    if (!name || !email || !message) {
+    if (typeof name !== 'string' || typeof email !== 'string' || typeof message !== 'string') {
         return res.status(400).json({ error: 'Name, email, and message are required.' });
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+
+    const trimmedName    = name.trim();
+    const trimmedEmail   = email.trim();
+    const trimmedSubject = typeof subject === 'string' ? subject.trim() : '';
+    const trimmedMessage = message.trim();
+
+    if (!trimmedName || !trimmedEmail || !trimmedMessage) {
+        return res.status(400).json({ error: 'Name, email, and message cannot be empty.' });
+    }
+
+    if (trimmedName.length > 100 || trimmedEmail.length > 100 || trimmedSubject.length > 200 || trimmedMessage.length > 5000) {
+        return res.status(400).json({ error: 'Input exceeds maximum allowed length.' });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
         return res.status(400).json({ error: 'Invalid email address.' });
     }
 
+    // Reject header injection
+    if (/[\r\n]/.test(trimmedName) || /[\r\n]/.test(trimmedEmail) || /[\r\n]/.test(trimmedSubject)) {
+        return res.status(400).json({ error: 'Invalid characters in input.' });
+    }
+
     try {
-        // Build a fresh transporter with a resolved IPv4 host each time.
-        // This is lightweight (one DNS query) and ensures we never hit an IPv6 address.
         const transporter = await buildTransporter();
+        const cleanName   = trimmedName.replace(/["\\]/g, '');
 
         const mailOptions = {
-            from:    `"${escapeHtml(name)} via Portfolio" <${SMTP_USER}>`,
-            replyTo: `"${name}" <${email}>`,
+            from:    `"${cleanName} via Portfolio" <${SMTP_USER}>`,
+            replyTo: `"${cleanName}" <${trimmedEmail}>`,
             to:      CONTACT_EMAIL,
-            subject: subject ? `[Portfolio] ${subject}` : '[Portfolio] New message',
+            subject: trimmedSubject ? `[Portfolio] ${trimmedSubject}` : '[Portfolio] New message',
             html: `
               <div style="font-family:monospace;background:#0d0d0d;color:#e0e0e0;padding:24px;border-radius:8px;max-width:600px;">
                 <h2 style="color:#00d4ff;margin-top:0;">📨 New Portfolio Message</h2>
-                <p><strong>Name:</strong> ${escapeHtml(name)}</p>
-                <p><strong>Email:</strong> <a href="mailto:${escapeHtml(email)}" style="color:#00d4ff;">${escapeHtml(email)}</a></p>
-                <p><strong>Subject:</strong> ${escapeHtml(subject || '(none)')}</p>
+                <p><strong>Name:</strong> ${escapeHtml(trimmedName)}</p>
+                <p><strong>Email:</strong> <a href="mailto:${escapeHtml(trimmedEmail)}" style="color:#00d4ff;">${escapeHtml(trimmedEmail)}</a></p>
+                <p><strong>Subject:</strong> ${escapeHtml(trimmedSubject || '(none)')}</p>
                 <hr style="border-color:#333;margin:16px 0;">
-                <p><strong>Message:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
+                <p><strong>Message:</strong><br>${escapeHtml(trimmedMessage).replace(/\n/g, '<br>')}</p>
               </div>`
         };
 
@@ -167,7 +190,7 @@ app.post('/api/contact', async (req, res) => {
             new Promise((_, reject) => setTimeout(() => reject(new Error('SMTP timeout')), 25000))
         ]);
 
-        console.log(`[contact] ✅ Sent from ${name} <${email}> — id: ${info.messageId}`);
+        console.log(`[contact] ✅ Email sent successfully (id: ${info.messageId})`);
         res.json({ message: 'success' });
     } catch (err) {
         console.error('[contact] ❌ Error:', err.message, '| code:', err.code);
@@ -175,10 +198,19 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
+// Reject unsupported methods on /api/contact
+app.all('/api/contact', (req, res) => {
+    res.set('Allow', 'POST, OPTIONS');
+    res.status(405).json({ error: 'Method not allowed.' });
+});
+
 // ── Global error handler ─────────────────────────────────────────
 app.use((err, req, res, next) => {
-    if (err.type === 'entity.parse.failed') {
+    if (err.type === 'entity.parse.failed' || err.status === 400) {
         return res.status(400).json({ error: 'Invalid JSON in request body.' });
+    }
+    if (err.status === 413) {
+        return res.status(413).json({ error: 'Request body exceeds maximum allowed size.' });
     }
     console.error('[server] Unhandled error:', err.message);
     res.status(500).json({ error: 'Internal server error.' });
@@ -186,14 +218,17 @@ app.use((err, req, res, next) => {
 
 // ── Start ────────────────────────────────────────────────────────
 // If we are not in a serverless environment (like Vercel), start the server
-if (process.env.NODE_ENV !== 'production' || process.env.RENDER) {
+if (require.main === module && (process.env.NODE_ENV !== 'production' || process.env.RENDER)) {
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Server running on port ${PORT}`);
         if (SMTP_USER && SMTP_PASS) {
             // Warm up: verify SMTP using an IPv4-resolved transporter
             buildTransporter()
                 .then(t => t.verify())
-                .then(() => console.log('[smtp] ✅ Gmail SMTP ready — emails will work'))
+                .then(() => {
+                    isSmtpVerified = true;
+                    console.log('[smtp] ✅ Gmail SMTP ready — emails will work');
+                })
                 .catch(err => {
                     console.error('[smtp] ❌ SMTP verify failed:', err.message, '| code:', err.code);
                     if (err.code === 'ENETUNREACH') {

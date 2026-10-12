@@ -3,12 +3,26 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siddharth S — Portfolio OS</title>
     <meta name="description"
         content="Interactive terminal portfolio of Siddharth S — Developer, Student, Builder. Explore using CLI commands.">
+    <meta name="author" content="Siddharth S">
     <meta name="theme-color" content="#070A12">
-    <link rel="icon" href="/assets/profile.jpg" type="image/jpeg">
+
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Siddharth S — Portfolio OS">
+    <meta property="og:description"
+        content="Interactive terminal portfolio of Siddharth S — Developer, Student, Builder. Explore projects, skills, and experience.">
+    <meta property="og:image" content="/assets/profile.jpg">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Siddharth S — Portfolio OS">
+    <meta name="twitter:description"
+        content="Interactive terminal portfolio of Siddharth S — Developer, Student, Builder. Explore projects, skills, and experience.">
+    <meta name="twitter:image" content="/assets/profile.jpg">
+
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -68,7 +82,10 @@
 
             <div class="sb-profile">
                 <div class="sb-avatar-wrap">
-                    <img src="/assets/profile.jpg" alt="Siddharth S" class="sb-avatar">
+                    <picture>
+                        <source srcset="/assets/profile.webp" type="image/webp">
+                        <img src="/assets/profile.jpg" alt="Siddharth S" class="sb-avatar" width="108" height="108">
+                    </picture>
                 </div>
                 <div class="sb-name-block">
                     <div class="sb-name">SIDDHARTH S</div>
@@ -79,22 +96,22 @@
 
             <div class="sb-divider"></div>
 
-            <div class="sb-nav">
+            <div class="sb-nav" role="navigation" aria-label="Explore sections">
                 <div class="sb-section-label">EXPLORE</div>
-                <div class="sb-nav-item" data-cmd="run about"><span class="sb-nav-key">ABOUT</span></div>
-                <div class="sb-nav-item" data-cmd="run skills"><span class="sb-nav-key">SKILLS</span></div>
-                <div class="sb-nav-item" data-cmd="run projects"><span class="sb-nav-key">PROJECTS</span></div>
-                <div class="sb-nav-item" data-cmd="run experience"><span class="sb-nav-key">EXPERIENCE</span></div>
-                <div class="sb-nav-item" data-cmd="run resume"><span class="sb-nav-key">RESUME</span></div>
-                <div class="sb-nav-item" data-cmd="run contact"><span class="sb-nav-key">CONTACT</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run about"><span class="sb-nav-key">ABOUT</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run skills"><span class="sb-nav-key">SKILLS</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run projects"><span class="sb-nav-key">PROJECTS</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run experience"><span class="sb-nav-key">EXPERIENCE</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run resume"><span class="sb-nav-key">RESUME</span></div>
+                <div class="sb-nav-item" role="button" tabindex="0" data-cmd="run contact"><span class="sb-nav-key">CONTACT</span></div>
             </div>
 
             <div class="sb-divider"></div>
 
-            <div class="sb-nav">
+            <div class="sb-nav" role="navigation" aria-label="Social links">
                 <div class="sb-section-label">CONNECT</div>
-                <a href="https://github.com/codeXsidd" target="_blank" class="sb-nav-item" style="text-decoration:none;">GitHub</a>
-                <a href="https://linkedin.com/in/siddharth2006" target="_blank" class="sb-nav-item" style="text-decoration:none;">LinkedIn</a>
+                <a href="https://github.com/codeXsidd" target="_blank" rel="noopener noreferrer" class="sb-nav-item" style="text-decoration:none;">GitHub</a>
+                <a href="https://linkedin.com/in/siddharth2006" target="_blank" rel="noopener noreferrer" class="sb-nav-item" style="text-decoration:none;">LinkedIn</a>
                 <a href="mailto:siddharth291206@gmail.com" class="sb-nav-item" style="text-decoration:none;">Email</a>
             </div>
 
@@ -285,12 +302,12 @@
             animateRing();
 
             document.addEventListener('mouseover', (e) => {
-                if (e.target.closest('a, button, input, textarea, .sidebar-cmd, .run-card, .term-link')) {
+                if (e.target.closest('a, button, input, textarea, .sb-nav-item, .run-card, .term-link, .term-btn, .ac-item, [role="button"]')) {
                     ring.classList.add('hovering');
                 }
             });
             document.addEventListener('mouseout', (e) => {
-                if (e.target.closest('a, button, input, textarea, .sidebar-cmd, .run-card, .term-link')) {
+                if (e.target.closest('a, button, input, textarea, .sb-nav-item, .run-card, .term-link, .term-btn, .ac-item, [role="button"]')) {
                     ring.classList.remove('hovering');
                 }
             });

@@ -24,7 +24,27 @@ function renderPlain(text) {
   pre.style.color = 'var(--text-1)';
   pre.style.fontSize = '12px';
   pre.style.lineHeight = '1.8';
-  pre.textContent = text;
+  pre.style.whiteSpace = 'pre-wrap';
+  pre.style.wordBreak = 'break-word';
+
+  // Safely linkify URLs and profile links
+  const urlRegex = /((?:https?:\/\/|www\.)[^\s]+|(?:(?:leetcode|geeksforgeeks|hackerrank|skillrack)\.com\/[^\s]+))/g;
+  const parts = String(text).split(urlRegex);
+  parts.forEach(part => {
+    if (urlRegex.test(part)) {
+      const a = document.createElement('a');
+      a.href = part.startsWith('http') ? part : 'https://' + part;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = part;
+      a.style.color = 'var(--cyan)';
+      a.style.textDecoration = 'underline';
+      pre.appendChild(a);
+    } else {
+      pre.appendChild(document.createTextNode(part));
+    }
+  });
+
   return pre;
 }
 
@@ -64,7 +84,8 @@ function renderProject(content) {
   // Status
   const statusRow = h('div', 'term-box-row');
   statusRow.appendChild(h('div', 'term-box-key', 'STATUS'));
-  const st = h('div', 'term-status online', content.status);
+  const isProg = String(content.status).toLowerCase().includes('progress');
+  const st = h('div', `term-status ${isProg ? 'progress' : 'online'}`, content.status);
   statusRow.appendChild(st);
   body.appendChild(statusRow);
   body.appendChild(h('div', 'term-box-divider'));
@@ -134,6 +155,7 @@ function renderProfile(content) {
       const a = document.createElement('a');
       a.href = val;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.className = 'profile-val term-link';
       a.style.cssText = 'font-size:12px;padding:2px 8px;display:inline-block;';
       a.textContent = val;
@@ -173,6 +195,7 @@ function renderContactInfo(content) {
       const a = document.createElement('a');
       a.href = href;
       a.target = '_blank';
+      a.rel = 'noopener noreferrer';
       a.className = 'term-link';
       a.style.cssText = 'font-size:12px;padding:2px 10px;';
       a.textContent = val;
@@ -204,15 +227,132 @@ function renderEasterEgg(content) {
   return box;
 }
 
+function renderSkillCards() {
+  const categories = [
+    {
+      title: 'Programming Languages',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>',
+      skills: [
+        { name: 'Python' },
+        { name: 'JavaScript (ES6+)' },
+        { name: 'Java' },
+        { name: 'C' },
+        { name: 'C++', status: 'Learning' },
+        { name: 'SQL' }
+      ]
+    },
+    {
+      title: 'Frontend Development',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>',
+      skills: [
+        { name: 'HTML5' },
+        { name: 'CSS3' },
+        { name: 'JavaScript (Vanilla)' },
+        { name: 'React.js' },
+        { name: 'Bootstrap 5' },
+        { name: 'Responsive Design' }
+      ]
+    },
+    {
+      title: 'Backend Development',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>',
+      skills: [
+        { name: 'Node.js' },
+        { name: 'Express.js' },
+        { name: 'FastAPI' },
+        { name: 'REST APIs' },
+        { name: 'JSON' },
+        { name: 'HTTP / HTTPS' }
+      ]
+    },
+    {
+      title: 'Databases',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>',
+      skills: [
+        { name: 'MySQL' },
+        { name: 'MongoDB' },
+        { name: 'Supabase' }
+      ]
+    },
+    {
+      title: 'AI / Machine Learning',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a4 4 0 0 1 4 4c0 1.5-.8 2.8-2 3.5V11a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V9.5C6.8 8.8 6 7.5 6 6a4 4 0 0 1 4-4z"/><circle cx="12" cy="17" r="1"/><path d="M9 22h6"/></svg>',
+      skills: [
+        { name: 'Machine Learning' },
+        { name: 'Data Analysis' },
+        { name: 'NumPy' },
+        { name: 'Pandas' },
+        { name: 'Scikit-learn' }
+      ]
+    },
+    {
+      title: 'Cloud & DevOps',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg>',
+      skills: [
+        { name: 'Docker' },
+        { name: 'AWS' }
+      ]
+    },
+    {
+      title: 'Tools & Platforms',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>',
+      skills: [
+        { name: 'Git' },
+        { name: 'GitHub' },
+        { name: 'VS Code' },
+        { name: 'Postman' },
+        { name: 'Figma' },
+        { name: 'Node.js / npm' },
+        { name: 'Vercel' },
+        { name: 'GitHub Pages' }
+      ]
+    },
+    {
+      title: 'Hardware & IoT',
+      icon: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>',
+      skills: [
+        { name: 'ESP32' },
+        { name: 'Arduino' },
+        { name: 'Blynk IoT' },
+        { name: 'Sensor Integration' }
+      ]
+    }
+  ];
+
+  const grid = h('div', 'skills-grid');
+  categories.forEach(cat => {
+    const card = h('div', 'skill-card');
+    const hdr = h('div', 'skill-card-header');
+    hdr.innerHTML = `<span class="skill-card-icon">${cat.icon}</span><span class="skill-card-title">${cat.title}</span>`;
+    card.appendChild(hdr);
+
+    const tagsWrap = h('div', 'skill-tags-wrap');
+    cat.skills.forEach(s => {
+      const tag = h('div', 'skill-tag');
+      tag.appendChild(document.createTextNode(s.name));
+      if (s.status) {
+        const badge = h('span', 'skill-status-tag', s.status);
+        tag.appendChild(badge);
+      }
+      tagsWrap.appendChild(tag);
+    });
+
+    card.appendChild(tagsWrap);
+    grid.appendChild(card);
+  });
+
+  return grid;
+}
+
 function renderFileNode(fileNode) {
   const r = fileNode.render;
   const c = fileNode.content;
-  if (r === 'plain')        return renderPlain(c);
-  if (r === 'project')      return renderProject(c);
-  if (r === 'profile')      return renderProfile(c);
+  if (r === 'plain') return renderPlain(c);
+  if (r === 'project') return renderProject(c);
+  if (r === 'profile') return renderProfile(c);
   if (r === 'contact-info') return renderContactInfo(c);
 
-  if (r === 'easter-egg')   return renderEasterEgg(c);
+  if (r === 'easter-egg') return renderEasterEgg(c);
   return renderPlain(typeof c === 'string' ? c : JSON.stringify(c, null, 2));
 }
 
@@ -226,18 +366,18 @@ const COMMANDS = {
 
     const table = h('div', 'help-table');
     const cmds = [
-      ['help',          'Show available commands'],
-      ['ls',            'List files and directories'],
-      ['cd &lt;dir&gt;',       'Change directory'],
-      ['cat &lt;file&gt;',     'Read a file'],
-      ['pwd',           'Show current directory'],
-      ['whoami',        'Show developer profile'],
-      ['find &lt;query&gt;',   'Search the portfolio'],
-      ['history',       'Show command history'],
-      ['clear',         'Clear terminal (Ctrl+L)'],
-      ['run &lt;action&gt;',   'Run portfolio action'],
-      ['man &lt;command&gt;',  'Show command documentation'],
-      ['exit',          'End terminal session'],
+      ['help', 'Show available commands'],
+      ['ls', 'List files and directories'],
+      ['cd &lt;dir&gt;', 'Change directory'],
+      ['cat &lt;file&gt;', 'Read a file'],
+      ['pwd', 'Show current directory'],
+      ['whoami', 'Show developer profile'],
+      ['find &lt;query&gt;', 'Search the portfolio'],
+      ['history', 'Show command history'],
+      ['clear', 'Clear terminal (Ctrl+L)'],
+      ['run &lt;action&gt;', 'Run portfolio action'],
+      ['man &lt;command&gt;', 'Show command documentation'],
+      ['exit', 'End terminal session'],
     ];
     cmds.forEach(([cmd, desc]) => {
       table.appendChild(h('span', 'help-cmd', cmd));
@@ -483,11 +623,26 @@ const COMMANDS = {
   },
 
   run(args, term) {
-    const action = args[0]?.toLowerCase();
+    const action = args[0]?.toLowerCase().replace(/\/+$/, '');
     const actionMap = {
-      github: () => { window.open('https://github.com/codeXsidd', '_blank'); return h('div', 'c-success', '→ Opening GitHub...'); },
-      linkedin: () => { window.open('https://linkedin.com/in/siddharth2006', '_blank'); return h('div', 'c-success', '→ Opening LinkedIn...'); },
-      resume: () => { window.open('/assets/resume.pdf', '_blank'); return h('div', 'c-success', '→ Opening resume PDF...'); },
+      github: () => {
+        window.open('https://github.com/codeXsidd', '_blank');
+        const msg = h('div', 'c-success');
+        msg.innerHTML = `→ Opening GitHub... <a href="https://github.com/codeXsidd" target="_blank" rel="noopener noreferrer" class="term-link" style="margin-left:8px;font-size:11px;">[Direct Link]</a>`;
+        return msg;
+      },
+      linkedin: () => {
+        window.open('https://linkedin.com/in/siddharth2006', '_blank');
+        const msg = h('div', 'c-success');
+        msg.innerHTML = `→ Opening LinkedIn... <a href="https://linkedin.com/in/siddharth2006" target="_blank" rel="noopener noreferrer" class="term-link" style="margin-left:8px;font-size:11px;">[Direct Link]</a>`;
+        return msg;
+      },
+      resume: () => {
+        window.open('/assets/resume.pdf', '_blank');
+        const msg = h('div', 'c-success');
+        msg.innerHTML = `→ Opening resume PDF... <a href="/assets/resume.pdf" target="_blank" rel="noopener noreferrer" class="term-link" style="margin-left:8px;font-size:11px;">[Direct Link]</a>`;
+        return msg;
+      },
       contact: () => { term.showContactForm(); return null; },
       about: () => COMMANDS.cat(['about/profile.txt'], term),
       projects: () => {
@@ -499,10 +654,17 @@ const COMMANDS = {
         Object.entries(projects).forEach(([fname, node]) => {
           const c = node.content;
           const card = h('div', 'run-card');
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', '0');
           card.appendChild(h('div', 'run-card-title', `${c.number}. ${c.title}`));
           card.appendChild(h('div', 'run-card-desc', c.stack.join(' · ')));
-          card.addEventListener('click', () => {
-            term.executeCommand(`cat projects/${fname}`);
+          const openProject = () => term.executeCommand(`cat projects/${fname}`);
+          card.addEventListener('click', openProject);
+          card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              openProject();
+            }
           });
           grid.appendChild(card);
         });
@@ -515,16 +677,13 @@ const COMMANDS = {
       },
       skills: () => {
         const wrap = h('div', '');
-        const heading = h('div', 'sec-heading', 'SKILLS');
+        const heading = h('div', 'sec-heading', 'TECHNICAL SKILLS');
         wrap.appendChild(heading);
-        const skillsDir = FILESYSTEM.children.skills.children;
-        Object.entries(skillsDir).forEach(([fname, node]) => {
-          const section = h('div', '');
-          section.style.marginBottom = '12px';
-          const pre = renderPlain(node.content);
-          section.appendChild(pre);
-          wrap.appendChild(section);
-        });
+        wrap.appendChild(renderSkillCards());
+        const tip = h('div', 'c-dim');
+        tip.style.cssText = 'font-size:11px;margin-top:10px;';
+        tip.textContent = "Type 'cat skills/programming.txt' for raw notes, or 'help' for commands.";
+        wrap.appendChild(tip);
         return wrap;
       },
       experience: () => COMMANDS.cat(['experience/experience.txt'], term),
