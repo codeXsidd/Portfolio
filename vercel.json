@@ -3,8 +3,16 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/api/contact",
+      "destination": "/api/contact.js"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/health.js"
+    },
+    {
       "source": "/api/:path*",
-      "destination": "/api/:path*"
+      "destination": "/api/:path*.js"
     },
     {
       "source": "/((?!api/).*)",
