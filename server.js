@@ -33,19 +33,35 @@ if (!SMTP_USER || !SMTP_PASS) {
 }
 
 // ── Build a nodemailer transporter using a resolved IPv4 address ──
-// dns.resolve4() requests only A records → always returns IPv4 even on Render.
-// We then pass that IP as `host` and set tls.servername so Gmail's TLS cert
-// is still validated correctly against 'smtp.gmail.com'.
-async function buildTransporter() {
-    let smtpHost = 'smtp.gmail.com'; // fallback
+// Render free instances have NO IPv6 outbound routing → ENETUNREACH when connecting to IPv6.
+// We resolve to an IPv4 address via dns.lookup(family: 4) or dns.resolve4(),
+// and set tls.servername so Gmail's TLS certificate validates against 'smtp.gmail.com'.
+async function resolveIpv4Host(hostname) {
+    try {
+        const res = await dns.lookup(hostname, { family: 4 });
+        if (res && res.address) {
+            console.log(`[smtp] dns.lookup(${hostname}) → ${res.address} (IPv4 ✅)`);
+            return res.address;
+        }
+    } catch (err) {
+        console.warn(`[smtp] dns.lookup(${hostname}) failed: ${err.message}`);
+    }
 
     try {
-        const addresses = await dns.resolve4('smtp.gmail.com');
-        smtpHost = addresses[0];
-        console.log(`[smtp] Resolved smtp.gmail.com → ${smtpHost} (IPv4 ✅)`);
+        const addresses = await dns.resolve4(hostname);
+        if (addresses && addresses.length > 0) {
+            console.log(`[smtp] dns.resolve4(${hostname}) → ${addresses[0]} (IPv4 ✅)`);
+            return addresses[0];
+        }
     } catch (err) {
-        console.warn(`[smtp] IPv4 DNS resolve failed (${err.message}), using hostname.`);
+        console.warn(`[smtp] dns.resolve4(${hostname}) failed: ${err.message}`);
     }
+
+    return hostname;
+}
+
+async function buildTransporter() {
+    const smtpHost = await resolveIpv4Host('smtp.gmail.com');
 
     return nodemailer.createTransport({
         host:   smtpHost,
@@ -56,7 +72,7 @@ async function buildTransporter() {
             pass: SMTP_PASS
         },
         tls: {
-            servername:         'smtp.gmail.com', // validate TLS cert against the real hostname
+            servername: 'smtp.gmail.com',
             rejectUnauthorized: true
         },
         connectionTimeout: 15000,
@@ -65,7 +81,9 @@ async function buildTransporter() {
     });
 }
 
-let isSmtpVerified = false;
+let isSmtpVerified  = false;
+let lastSmtpError   = null;
+let lastEmailSentAt = null;
 
 // ── Helpers ──────────────────────────────────────────────────────
 function escapeHtml(str) {
@@ -95,11 +113,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── GET /api/health ──────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
     res.json({
-        status:         'ok',
-        service:        'portfolio-api',
-        smtpConfigured: !!(SMTP_USER && SMTP_PASS),
-        smtpVerified:   isSmtpVerified,
-        smtp:           !!(SMTP_USER && SMTP_PASS)
+        status:          'ok',
+        service:         'portfolio-api',
+        smtpConfigured:  !!(SMTP_USER && SMTP_PASS),
+        smtpVerified:    isSmtpVerified,
+        smtp:            !!(SMTP_USER && SMTP_PASS),
+        lastSmtpError:   lastSmtpError,
+        lastEmailSentAt: lastEmailSentAt
     });
 });
 
@@ -191,10 +211,14 @@ app.post('/api/contact', async (req, res) => {
         ]);
 
         console.log(`[contact] ✅ Email sent successfully (id: ${info.messageId})`);
+        isSmtpVerified  = true;
+        lastSmtpError   = null;
+        lastEmailSentAt = new Date().toISOString();
         res.json({ message: 'success' });
     } catch (err) {
+        lastSmtpError = { message: err.message, code: err.code, time: new Date().toISOString() };
         console.error('[contact] ❌ Error:', err.message, '| code:', err.code);
-        res.status(500).json({ error: 'Failed to send email. Please try again later.' });
+        res.status(500).json({ error: 'Failed to send email. Please try again later.', details: err.message });
     }
 });
 
@@ -217,8 +241,7 @@ app.use((err, req, res, next) => {
 });
 
 // ── Start ────────────────────────────────────────────────────────
-// If we are not in a serverless environment (like Vercel), start the server
-if (require.main === module && (process.env.NODE_ENV !== 'production' || process.env.RENDER)) {
+if (require.main === module) {
     app.listen(PORT, '0.0.0.0', () => {
         console.log(`✅ Server running on port ${PORT}`);
         if (SMTP_USER && SMTP_PASS) {

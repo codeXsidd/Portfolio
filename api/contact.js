@@ -38,16 +38,22 @@ function escapeHtml(str) {
         .replace(/'/g,  '&#39;');
 }
 
-async function buildTransporter(smtpUser, smtpPass) {
-    let smtpHost = 'smtp.gmail.com';
+async function resolveIpv4Host(hostname) {
     try {
-        const addresses = await dns.resolve4('smtp.gmail.com');
-        if (addresses && addresses.length > 0) {
-            smtpHost = addresses[0];
-        }
-    } catch (_) {
-        // Fallback to hostname
-    }
+        const res = await dns.lookup(hostname, { family: 4 });
+        if (res && res.address) return res.address;
+    } catch (_) {}
+
+    try {
+        const addresses = await dns.resolve4(hostname);
+        if (addresses && addresses.length > 0) return addresses[0];
+    } catch (_) {}
+
+    return hostname;
+}
+
+async function buildTransporter(smtpUser, smtpPass) {
+    const smtpHost = await resolveIpv4Host('smtp.gmail.com');
 
     return nodemailer.createTransport({
         host:   smtpHost,
