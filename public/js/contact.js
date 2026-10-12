@@ -101,14 +101,9 @@ function buildContactForm(term) {
   }
 
   // ── API base URL ───────────────────────────────────────────────
-  // Architecture: Vercel (siddharths.dev) = static frontend only
-  //               Render (portfolio-os-diee.onrender.com) = Node.js/Express backend
-  // When on Vercel or custom domain → call Render backend for API
-  // When on localhost or Render → use same-origin (relative path)
-  const RENDER_BACKEND = 'https://portfolio-os-diee.onrender.com';
-  const isLocalHost = ['localhost', '127.0.0.1'].includes(location.hostname);
-  const isRenderOrigin = location.hostname.endsWith('onrender.com');
-  const API_BASE = (isLocalHost || isRenderOrigin) ? '' : RENDER_BACKEND;
+  // Architecture: All-in-one on Vercel (static frontend + serverless functions in /api)
+  // Calls same-origin endpoint (/api/contact) directly on https://siddharths.dev
+  const API_BASE = '';
 
   // Helpers for safe DOM-based status updates
   function setStatusError(msg) {
