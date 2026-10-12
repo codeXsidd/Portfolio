@@ -1,15 +1,19 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
-  "rewrites": [
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/public/$1"
-    }
-  ],
+  "version": 2,
+  "outputDirectory": "public",
   "functions": {
     "api/*.js": {
       "maxDuration": 30
     }
-  }
+  },
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
 }
